@@ -21,7 +21,27 @@ See [`doc/TechnicalDesign.md`](doc/TechnicalDesign.md) for the architecture and
 The catalogue of conversions — language-agnostic and language-specific — is in
 [`doc/TypographyConversions.md`](doc/TypographyConversions.md).
 
+## Development
+
+Dependencies are managed with [`uv`](https://docs.astral.sh/uv/); the project
+virtualenv and the locked dependency set are provisioned for you.
+
+```sh
+uv sync                 # create .venv and install runtime + dev deps from uv.lock
+uv run pytest           # run the tests
+uv run ruff check .     # lint
+uv run ruff format .    # format
+uv run mypy src         # type-check
+```
+
+Continuous integration (GitHub Actions) runs the lint, format-check, type-check,
+and test steps across supported Python versions on every push and pull request.
+
+> Status: **Phase 0** (scaffolding) is in place. See
+> [`doc/ImplementationPlan.md`](doc/ImplementationPlan.md) for the roadmap.
+
 ## References
 
 1. EPUB3 Specification: [https://www.w3.org/publishing/epub3/](https://www.w3.org/publishing/epub3/)
-2. Standard Ebooks: [https://standardebooks.org/](https://standardebooks.org/), [`se typogrify`](https://github.com/standardebooks/tools/blob/master/se/commands/typogrify.py) (American English only)
+2. Standard Ebooks: [https://standardebooks.org/](https://standardebooks.org/)
+3. [`se typogrify`](https://github.com/standardebooks/tools/blob/master/se/commands/typogrify.py) (American English only)

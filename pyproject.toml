@@ -1,0 +1,64 @@
+[project]
+name = "epub-typogrify"
+version = "0.0.0"
+description = "Language-aware typographic conversions for EPUB3 source files"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Ivan Blazhko" }]
+keywords = ["epub", "typography", "typogrify", "xhtml", "i18n"]
+classifiers = [
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Text Processing :: Markup :: XML",
+]
+dependencies = [
+    "lxml>=5.0",
+    "regex>=2024.0.0",
+    "click>=8.1",
+]
+
+[project.scripts]
+epub_typogrify = "epub_typogrify.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "hypothesis>=6.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/epub_typogrify"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "W"]
+
+[tool.mypy]
+python_version = "3.11"
+files = ["src", "tests"]
+# lxml / regex ship without bundled type stubs at this stage; revisit when the
+# DOM layer lands (Phase 3) by adding lxml-stubs.
+ignore_missing_imports = true
+check_untyped_defs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+no_implicit_optional = true
+
+# The rules package is the pure, well-typed core — hold it to a stricter bar.
+[[tool.mypy.overrides]]
+module = ["epub_typogrify.rules.*"]
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+warn_return_any = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
