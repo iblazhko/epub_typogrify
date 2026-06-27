@@ -76,17 +76,25 @@ is generic, so other languages are added as data.
 
 ### 2.1 Quotation marks & apostrophe
 
-| Locale | Primary | Secondary (nested) | Apostrophe | Source |
+The mapping is **character-based**: a straight `"` becomes the locale's *double*
+pair, a straight `'` its *single* pair (or the apostrophe). Opening vs. closing
+is decided from context, carried across inline markup by the `ContextState`. The
+tool does **not** reflow an author's double/single choice into a different
+nesting convention.
+
+| Locale | `"` → (double) | `'` → (single) | Apostrophe | Source |
 |---|---|---|---|---|
 | `en` (US) | `“ … ”` | `‘ … ’` | `’` | `[CMOS ch.6, ch.13]` |
-| `en-GB` | `‘ … ’` | `“ … ”` | `’` | `[NHR ch.9]` |
+| `en-GB` | `“ … ”` | `‘ … ’` | `’` | `[NHR ch.9]` |
 | `fr` | `« … »` | `“ … ”` | `’` | `[IN]` |
 | `de` | `„ … “` | `‚ … ‘` | `’` | `[DUDEN]` |
 | `la` | inherit surrounding / `“ … ”` | — | — | — (follows host locale) |
 
-Straight `"`/`'` are converted to the locale's marks using context (opening vs
-closing) carried across inline markup by the `ContextState`. Mark code points
-per `[U]` (General Punctuation).
+> `en` and `en-GB` use the **same** Unicode quote marks; the British convention
+> of single quotes as the *outer* mark is realised by the author using `'` for
+> outer quotations, which the engine renders faithfully. Code points per `[U]`
+> (General Punctuation). British/American differences that the tool *does* apply
+> are punctuation placement, abbreviations, and the dash — see §2.7.
 
 ### 2.2 `--` target (dialogue/parenthetical dash)
 
@@ -148,31 +156,29 @@ Irregularities handled in code rather than data (TechnicalDesign §6b):
 
 ### 2.7 British vs. American English
 
-The two English locales share most rules but differ on four conventions. `en`
-(bare tag) is treated as American English; `en-GB` is a small delta over it.
-US conventions follow `[CMOS]`; British conventions follow `[NHR]`.
+The two English locales share most rules but differ on three conventions the
+tool applies. `en` (bare tag) is treated as American English; `en-GB` is a small
+delta over it. US conventions follow `[CMOS]`; British conventions follow `[NHR]`.
 
 | Convention | `en` (American) | `en-GB` (British) | Source |
 |---|---|---|---|
-| Outer / inner quotes | `“double”` then `‘single’` | `‘single’` then `“double”` | `[CMOS ch.6]` / `[NHR ch.9]` |
 | Punctuation vs. closing quote | typesetters' — always inside | logical — inside only if part of the quote | `[CMOS ch.6]` / `[NHR ch.9]` |
 | Parenthetical dash (§2.2) | em, closed: `cat—black—ran` | en, spaced: `cat – black – ran` | `[CMOS ch.6]` / `[NHR ch.4]` |
 | Title abbreviations (§2.3) | `Mr.` `Mrs.` `Dr.` `St.` | `Mr` `Mrs` `Dr` `St` (no stop) | `[CMOS ch.10]` / `[NHR ch.10]` |
 
-**Quotes** — straight quotes resolve to opposite primary/secondary marks
-(`[CMOS ch.6]` / `[NHR ch.9]`):
+> **Quote marks are *not* a difference the tool applies.** Both locales map
+> `"` → `“ ”` and `'` → `‘ ’` (§2.1). British single-as-outer is the author's
+> choice of straight mark, rendered faithfully; the tool does not convert
+> American-style nesting into British or vice versa.
 
-| Input (US vs GB) | `en` output | `en-GB` output |
-|---|---|---|
-| `"He said 'hi' then left"` | `“He said ‘hi’ then left”` | `‘He said “hi” then left’` |
-
-**Punctuation placement** — only the closing punctuation differs
-(`[CMOS ch.6]` typesetters' style / `[NHR ch.9]` logical style):
+**Punctuation placement** — the quote marks are identical (`“ ”`); only the
+position of the trailing period/comma differs (`[CMOS ch.6]` typesetters' style,
+inside / `[NHR ch.9]` logical style, outside):
 
 | Input | `en` output | `en-GB` output |
 |---|---|---|
-| `the word "cat".` | `the word “cat.”` | `the word ‘cat’.` |
-| `she said "go",` | `she said “go,”` | `she said ‘go’,` |
+| `the word "cat".` | `the word “cat.”` | `the word “cat”.` |
+| `she said "go",` | `she said “go,”` | `she said “go”,` |
 
 The `en-GB` relocation is a code hook (§2.6) and is applied **only** when it is
 unambiguous that the punctuation is not part of the quoted material; otherwise

@@ -189,9 +189,11 @@ profile builds on — it is **not** a locale that text can resolve to. Schema
 # locales/fr.toml
 inherits = "default"
 
+# The engine is character-based: a straight `"` becomes `double`, a straight
+# `'` becomes `single` (or `apostrophe`).
 [quotes]
-primary   = { open = "«", close = "»" }   # guillemets
-secondary = { open = "“", close = "”" }
+double = { open = "«", close = "»" }   # guillemets for `"`
+single = { open = "“", close = "”" }   # French nested marks for `'`
 apostrophe = "’"
 
 [quotes.spacing]
@@ -227,9 +229,10 @@ patterns = [
 # locales/en.toml  —  American English (the default for a bare `en` tag)
 inherits = "default"
 
+# `"` → double, `'` → single (character-based; nesting is not reflowed).
 [quotes]
-primary   = { open = "“", close = "”" }   # double quotes outermost
-secondary = { open = "‘", close = "’" }   # single quotes when nested
+double = { open = "“", close = "”" }      # straight `"` becomes these
+single = { open = "‘", close = "’" }      # straight `'` becomes these
 apostrophe = "’"
 punctuation = "typesetters"               # commas/periods go INSIDE the quotes
 
@@ -251,9 +254,12 @@ nonbreaking = ["Mr.", "Mrs.", "Ms.", "Dr.", "St.", "No.", "vol.", "p."]
 # else (ellipsis, fractions, ranges, …) is inherited unchanged.
 inherits = "en"
 
+# British English uses the SAME Unicode quote marks as American English
+# (“ ” / ‘ ’), so no `double`/`single` override is needed — the British
+# single-as-primary convention is realised by the author using `'` for outer
+# quotations, which the character-based engine renders faithfully. Only the
+# punctuation-placement convention differs:
 [quotes]
-primary   = { open = "‘", close = "’" }   # single quotes outermost
-secondary = { open = "“", close = "”" }   # double quotes when nested
 punctuation = "logical"                   # punctuation INSIDE only if part of the quote
 
 [dashes]
@@ -271,8 +277,8 @@ nonbreaking = ["Mr", "Mrs", "Ms", "Dr", "St", "No.", "vol.", "p."]
 
 | Convention | `en` (American) | `en-GB` (British) |
 |---|---|---|
-| Outer / inner quotes | `“double”` then `‘single’` | `‘single’` then `“double”` |
-| Comma/period vs. closing quote | inside: `“cat,”` | logical: `‘cat’,` (unless part of quote) |
+| Quote marks | `“ ” / ‘ ’` | `“ ” / ‘ ’` (same; mapping is character-based) |
+| Comma/period vs. closing quote | inside: `“cat.”` | logical: `“cat”.` (unless part of quote) |
 | Parenthetical dash | em, closed: `cat—black—ran` | en, spaced: `cat – black – ran` |
 | Title abbreviations | `Mr.` `Mrs.` `Dr.` `St.` | `Mr` `Mrs` `Dr` `St` (no stop) |
 | Keep-together nbsp | `Mr.␣ₙSmith` | `Mr␣ₙSmith` |
