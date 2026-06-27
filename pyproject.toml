@@ -1,6 +1,6 @@
 [project]
 name = "epub-typogrify"
-version = "0.0.0"
+version = "1.0.0"
 description = "Language-aware typographic conversions for EPUB3 source files"
 readme = "README.md"
 requires-python = ">=3.11"

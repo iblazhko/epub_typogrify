@@ -2,7 +2,7 @@
 
 ``LocaleProfile`` loading/inheritance, the ``LocaleRegistry`` (tag -> profile, or
 none for unsupported languages), the ``data/`` TOML profiles, and the ``hooks/``
-code overrides. Built in Phase 2 (see ``doc/ImplementationPlan.md``).
+code overrides.
 """
 
 from __future__ import annotations

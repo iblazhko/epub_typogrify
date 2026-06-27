@@ -13,8 +13,7 @@ EPUB is a distribution and interchange format for digital publications and docum
 
 Typographic conversions are language-specific and applied according to the effective language of the current block of the content file.
 
-See [`doc/TechnicalDesign.md`](doc/TechnicalDesign.md) for the architecture and
-[`doc/ImplementationPlan.md`](doc/ImplementationPlan.md) for the build plan.
+See [`doc/TechnicalDesign.md`](doc/TechnicalDesign.md) for the architecture.
 
 ## Typographic Rules
 
@@ -23,23 +22,67 @@ The catalogue of conversions — language-agnostic and language-specific — is 
 
 ## Usage
 
-Point the tool at an unpacked EPUB project directory, or at individual XHTML
-files. Edits are written in place (rely on version control for review/rollback).
-
-```sh
-# Process a project: the OPF supplies the publication language and content set.
-epub_typogrify path/to/book/
-
-# Preview without writing, with per-file reporting.
-epub_typogrify --dry-run -v path/to/book/
-
-# Loose files are processed standalone; give a language for undeclared text.
-epub_typogrify --default-lang en chapter.xhtml
+```
+epub_typogrify [OPTIONS] <source-dir | file.xhtml ...>
 ```
 
-Text whose language cannot be resolved — and that has no `--default-lang` — is
-left unchanged, as is anything in `pre`/`code`/MathML/`translate="no"` and in
-`titlepage`/`imprint`/`copyright-page`/`colophon` sections.
+`epub_typogrify` operates at the authoring stage, on the **unpacked** EPUB source
+files (it does not read or write a `.epub` ZIP). Edits are written **in place**,
+so run it from a clean version-control state and review the diff.
+
+### Targets
+
+- **A project directory** — the tool finds the OPF package document (via
+  `META-INF/container.xml`, or an `*.opf` glob), reads the publication language
+  from `dc:language`, and processes the XHTML documents listed in the spine
+  (plus the navigation document).
+- **Individual `.xhtml` files** — processed standalone. The OPF is *not*
+  consulted even if one exists nearby; a warning is emitted if the file appears
+  to belong to a project, suggesting you point at the project directory or pass
+  `--default-lang`.
+
+### Options
+
+| Option | Description |
+|---|---|
+| `-l`, `--default-lang TAG` | Fallback language (BCP-47, e.g. `en`, `en-GB`, `fr`) for text that declares none. If omitted, text with no resolvable language is left unchanged — no default is assumed. |
+| `--dry-run` | Report what would change; write nothing. |
+| `-v`, `--verbose` | Per-file reporting (`conv` changed, `skip` ignored section, `--` unchanged). |
+| `-h`, `--help` | Show help and exit. |
+
+### How the language of each text run is chosen
+
+Conversions are language-specific and selected **per content node**. The language
+of a run of text is resolved as: nearest ancestor `xml:lang`/`lang` → the
+document's `<html lang>` → the publication `dc:language` (project runs only) →
+`--default-lang`. If none of these apply, the run is left unchanged. Supported
+languages are `en` (American), `en-GB` (British), `fr`, `de`, and `la`; text in
+any other language is left untouched.
+
+### What is left untouched
+
+- All XHTML markup, attributes, entities, and non-text resources — only text
+  content is transformed.
+- Content inside `pre`, `code`, `kbd`, `samp`, `var`, `tt`, `script`, `style`,
+  MathML, SVG, and any element marked `translate="no"` or `class="notypo"`.
+- Sections whose typography is usually deliberate: `titlepage`, `imprint`,
+  `copyright-page`, `colophon`.
+
+### Examples
+
+```sh
+# Process a project in place (publication language comes from the OPF).
+epub_typogrify path/to/book/
+
+# Preview the changes without writing them, with per-file reporting.
+epub_typogrify --dry-run -v path/to/book/
+
+# Process loose files, supplying a language for otherwise-undeclared text.
+epub_typogrify --default-lang en src/chapter-1.xhtml src/chapter-2.xhtml
+```
+
+The full catalogue of conversions is in
+[`doc/TypographyConversions.md`](doc/TypographyConversions.md).
 
 ## Development
 
@@ -56,13 +99,6 @@ uv run mypy src         # type-check
 
 Continuous integration (GitHub Actions) runs the lint, format-check, type-check,
 and test steps across supported Python versions on every push and pull request.
-
-> Status: **Phase 4** (OPF discovery + CLI) is in place — the tool runs
-> end-to-end. Point `epub_typogrify` at an unpacked EPUB project directory (its
-> OPF supplies the publication language and content set) or at loose `.xhtml`
-> files; edits are written in place, with `--dry-run` to preview. Phase 5
-> (hardening, packaging) remains. See
-> [`doc/ImplementationPlan.md`](doc/ImplementationPlan.md) for the roadmap.
 
 ## References
 

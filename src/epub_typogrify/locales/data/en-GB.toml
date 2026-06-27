@@ -2,10 +2,10 @@
 inherits = "en"
 
 [quotes]
-punctuation = "logical"   # period/comma stays outside the closing quote
+punctuation = "logical" # period/comma stays outside the closing quote
 
 [dashes]
-double_hyphen = "–"            # `--` -> en dash
+double_hyphen = "–" # `--` -> en dash
 parenthetical_spacing = "spaced"
 
 [abbreviations]

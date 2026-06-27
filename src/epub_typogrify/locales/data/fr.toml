@@ -5,7 +5,7 @@ inherits = "default"
 double = { open = "«", close = "»" }   # guillemets for `"`
 single = { open = "“", close = "”" }   # nested marks for `'`
 apostrophe = "’"
-punctuation = "logical"                      # no typesetters' relocation
+punctuation = "logical"                # no typesetters' relocation
 
 [dashes]
 double_hyphen = "—"   # em dash for dialogue

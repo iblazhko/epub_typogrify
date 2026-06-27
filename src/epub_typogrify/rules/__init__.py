@@ -2,7 +2,7 @@
 
 Pure ``str``-level logic (no DOM, no IO): the ``Rule``/``Pipeline`` abstraction,
 ``ContextState``, the language-agnostic rules, and the locale-parametrised quote
-engine. Built in Phase 1 (see ``doc/ImplementationPlan.md``).
+engine.
 """
 
 from __future__ import annotations

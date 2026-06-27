@@ -1,4 +1,4 @@
-# American English (also the resolution target for a bare `en` tag).
+# American English rules are used for a bare `en` tag.
 inherits = "default"
 
 # Quotes, dashes, ellipsis, fractions are all inherited from `default`
