@@ -380,20 +380,24 @@ the affected text is left untouched (see §5).
 ```
 src/epub_typogrify/
   __init__.py
+  chars.py               # shared named Unicode constants
   cli.py                 # argument parsing, orchestration, reporting
+  processor.py           # parse → walk → serialize (end-to-end on a document)
   source/
     project.py           # locate/parse OPF, enumerate content files on disk
-    xhtml.py             # parse / serialize, DOM helpers
+    xhtml.py             # parse / serialize with markup fidelity
   lang/
     resolver.py          # nearest-ancestor BCP-47 resolution
     walker.py            # block-wise text-node traversal + ContextState
   rules/
     pipeline.py          # ordered Rule pipeline
+    context.py           # ContextState + Rule type
     quotes.py            # context-aware smart quotes/apostrophes
     dashes.py            # hyphens, en/em, ranges, minus
     ellipsis.py
     spacing.py           # nbsp / narrow nbsp / word joiner
     fractions.py
+    punctuation.py       # punctuation placement (typesetters/logical)
   locales/
     registry.py          # tag → profile, fallback chain, hook registry
     profile.py           # LocaleProfile dataclass + TOML loader

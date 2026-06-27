@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import pytest
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis import strategies as st
 
+from epub_typogrify import chars
 from epub_typogrify.chars import ELLIPSIS, EM_DASH, NO_BREAK_SPACE
 from epub_typogrify.locales.registry import LocaleRegistry
 from epub_typogrify.rules.pipeline import build_pipeline
@@ -21,6 +22,9 @@ _CORPUS = [
     f"already {ELLIPSIS} converted {EM_DASH} text",
     "----",  # four hyphens, left alone
     ". . . .",  # four spaced dots
+    '0"..',  # stacked closing quote + repeated punctuation (Hypothesis regressions)
+    '0".".',
+    'word"."',
 ]
 
 
@@ -32,9 +36,18 @@ def test_corpus_idempotent(profile, text: str) -> None:
     assert pipeline.run(once) == once
 
 
-_ALPHABET = list("ab .,;:-'\"/0129()" + EM_DASH + ELLIPSIS + NO_BREAK_SPACE + "`")
+_ALPHABET = list(
+    "ab .,;:-'\"/0129()`"
+    + EM_DASH
+    + ELLIPSIS
+    + NO_BREAK_SPACE
+    + chars.LEFT_DOUBLE_QUOTE
+    + chars.RIGHT_DOUBLE_QUOTE
+    + chars.RIGHT_SINGLE_QUOTE
+)
 
 
+@settings(max_examples=500)
 @given(st.text(alphabet=st.sampled_from(_ALPHABET), max_size=48))
 def test_pipeline_idempotent_property(text: str) -> None:
     pipeline = build_pipeline(EN)

@@ -37,8 +37,10 @@ uv run mypy src         # type-check
 Continuous integration (GitHub Actions) runs the lint, format-check, type-check,
 and test steps across supported Python versions on every push and pull request.
 
-> Status: **Phase 2** (locale profiles + code hooks; en, en-GB, fr, de, la) is in
-> place. See [`doc/ImplementationPlan.md`](doc/ImplementationPlan.md) for the roadmap.
+> Status: **Phase 3** (XHTML DOM layer — per-node language resolution, protected
+> subtrees, markup-preserving I/O) is in place; conversions now run end-to-end on
+> XHTML files via `epub_typogrify.processor`. The CLI (Phase 4) is next. See
+> [`doc/ImplementationPlan.md`](doc/ImplementationPlan.md) for the roadmap.
 
 ## References
 

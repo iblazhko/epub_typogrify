@@ -19,13 +19,19 @@ from epub_typogrify import chars
 from epub_typogrify.locales.profile import LocaleProfile
 from epub_typogrify.rules.context import ContextState
 
-# Move the punctuation before the *whole* run of closing quotes, so re-running
-# finds nothing to move (idempotent even for stacked closers like ``””.``).
-_CLOSING_THEN_PUNCT = re.compile(r"(" + chars.RIGHT_DOUBLE_QUOTE + r"+)([.,])")
+# Move the whole run of trailing punctuation before the run of closing quotes,
+# but only when no punctuation already precedes them (so we never create a fresh
+# ``.”.``). Moving punctuation can make two quotes adjacent and expose a further
+# match, so we iterate to a fixed point — punctuation only ever moves leftward,
+# so this terminates — and the result is therefore itself idempotent.
+_CLOSING_THEN_PUNCT = re.compile(r"(?<![.,])(" + chars.RIGHT_DOUBLE_QUOTE + r"+)([.,]+)")
 
 
 def punctuation_placement_rule(text: str, profile: LocaleProfile, ctx: ContextState) -> str:
     if profile.quotes.punctuation != "typesetters":
         return text
-    result: str = _CLOSING_THEN_PUNCT.sub(lambda m: m.group(2) + m.group(1), text)
-    return result
+    while True:
+        moved: str = _CLOSING_THEN_PUNCT.sub(lambda m: m.group(2) + m.group(1), text)
+        if moved == text:
+            return text
+        text = moved
