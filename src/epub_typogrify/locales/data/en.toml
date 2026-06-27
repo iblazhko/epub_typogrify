@@ -1,0 +1,12 @@
+# American English (also the resolution target for a bare `en` tag).
+inherits = "default"
+
+# Quotes, dashes, ellipsis, fractions are all inherited from `default`
+# (American conventions). en adds non-breaking spacing.
+
+[abbreviations]
+full_stop_after_contractions = true
+nonbreaking = ["Mr.", "Mrs.", "Ms.", "Dr.", "St.", "No.", "vol.", "p."]
+
+[keep_together]
+units = ["km", "kg", "mm", "cm", "m", "%", "°C", "°F"]

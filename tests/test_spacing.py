@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from epub_typogrify.locales.profile import LocaleProfile
 from epub_typogrify.chars import EM_DASH, NO_BREAK_SPACE, THREE_EM_DASH, WORD_JOINER
+from epub_typogrify.locales.profile import LocaleProfile
 from epub_typogrify.rules.context import ContextState
 from epub_typogrify.rules.spacing import collapse_whitespace, word_joiner_before_em_dash
 

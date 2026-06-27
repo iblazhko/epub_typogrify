@@ -62,6 +62,11 @@ class LocaleRegistry:
                 raw[path.stem] = tomllib.load(handle)
         return cls(raw)
 
+    @classmethod
+    def default(cls) -> LocaleRegistry:
+        """Load the locale profiles shipped in :mod:`epub_typogrify.locales.data`."""
+        return cls.from_directory(Path(__file__).parent / "data")
+
     def _merged(self, tag: str) -> dict[str, Any] | None:
         """Return the inheritance-merged data for *tag*, or ``None`` if unregistered."""
         key = _norm(tag)

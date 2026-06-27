@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from epub_typogrify.locales.profile import LocaleProfile
 from epub_typogrify.chars import ELLIPSIS, EM_DASH, EN_DASH, WORD_JOINER
 from epub_typogrify.chars import LEFT_DOUBLE_QUOTE as LDQ
 from epub_typogrify.chars import ONE_HALF as HALF
 from epub_typogrify.chars import RIGHT_DOUBLE_QUOTE as RDQ
 from epub_typogrify.chars import RIGHT_SINGLE_QUOTE as RSQ
+from epub_typogrify.locales.profile import LocaleProfile
 from epub_typogrify.rules.pipeline import build_pipeline
 
 

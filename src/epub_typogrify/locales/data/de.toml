@@ -1,0 +1,12 @@
+# German. Low/high quotation marks; the character-based engine produces the
+# nesting from the author's `"`/`'` choice, so no code hook is needed.
+inherits = "default"
+
+[quotes]
+double = { open = "„", close = "“" }   # „ … “
+single = { open = "‚", close = "‘" }   # ‚ … ‘
+apostrophe = "’"
+punctuation = "logical"
+
+[dashes]
+double_hyphen = "–"   # Halbgeviertstrich (en dash)

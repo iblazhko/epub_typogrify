@@ -1,0 +1,18 @@
+# French.
+inherits = "default"
+
+[quotes]
+double = { open = "«", close = "»" }   # guillemets for `"`
+single = { open = "“", close = "”" }   # nested marks for `'`
+apostrophe = "’"
+punctuation = "logical"                      # no typesetters' relocation
+
+[dashes]
+double_hyphen = "—"   # em dash for dialogue
+
+[spaces]
+before_high_punctuation = true   # narrow nbsp before ; : ! ?
+guillemet_inner = true           # narrow nbsp inside « »
+
+[abbreviations]
+nonbreaking = ["M.", "MM.", "Mme", "Mlle", "Dr", "No", "p.", "vol."]

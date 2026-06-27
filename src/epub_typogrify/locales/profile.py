@@ -63,6 +63,36 @@ class EllipsisStyle:
 
 
 @dataclass(frozen=True)
+class Spaces:
+    """Which non-breaking space a locale uses, and French high-punctuation spacing.
+
+    ``before_high_punctuation``/``guillemet_inner`` drive the French narrow-space
+    hook (§2.4); they are off by default.
+    """
+
+    nbsp: str = chars.NO_BREAK_SPACE
+    narrow_nbsp: str = chars.NARROW_NO_BREAK_SPACE
+    before_high_punctuation: bool = False
+    guillemet_inner: bool = False
+
+
+@dataclass(frozen=True)
+class Abbreviations:
+    """Abbreviations that take a non-breaking space before the following token
+    (§2.3), and whether a full stop follows a contraction (US) or not (British)."""
+
+    nonbreaking: tuple[str, ...] = ()
+    full_stop_after_contractions: bool = True
+
+
+@dataclass(frozen=True)
+class KeepTogether:
+    """Units that bind to a preceding number with a non-breaking space (§2.3)."""
+
+    units: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
 class LocaleProfile:
     """The complete set of data-driven conventions for one locale."""
 
@@ -70,6 +100,9 @@ class LocaleProfile:
     quotes: Quotes
     dashes: Dashes = field(default_factory=Dashes)
     ellipsis: EllipsisStyle = field(default_factory=EllipsisStyle)
+    spaces: Spaces = field(default_factory=Spaces)
+    abbreviations: Abbreviations = field(default_factory=Abbreviations)
+    keep_together: KeepTogether = field(default_factory=KeepTogether)
     fractions_enabled: bool = True
 
 
@@ -104,6 +137,26 @@ def _ellipsis_from_dict(data: Mapping[str, Any]) -> EllipsisStyle:
     )
 
 
+def _spaces_from_dict(data: Mapping[str, Any]) -> Spaces:
+    return Spaces(
+        nbsp=data.get("nbsp", chars.NO_BREAK_SPACE),
+        narrow_nbsp=data.get("narrow_nbsp", chars.NARROW_NO_BREAK_SPACE),
+        before_high_punctuation=bool(data.get("before_high_punctuation", False)),
+        guillemet_inner=bool(data.get("guillemet_inner", False)),
+    )
+
+
+def _abbreviations_from_dict(data: Mapping[str, Any]) -> Abbreviations:
+    return Abbreviations(
+        nonbreaking=tuple(data.get("nonbreaking", ())),
+        full_stop_after_contractions=bool(data.get("full_stop_after_contractions", True)),
+    )
+
+
+def _keep_together_from_dict(data: Mapping[str, Any]) -> KeepTogether:
+    return KeepTogether(units=tuple(data.get("units", ())))
+
+
 def profile_from_dict(tag: str, data: Mapping[str, Any]) -> LocaleProfile:
     """Build a :class:`LocaleProfile` from a (merged) mapping, applying defaults
     for any absent section or field."""
@@ -116,5 +169,8 @@ def profile_from_dict(tag: str, data: Mapping[str, Any]) -> LocaleProfile:
         quotes=_quotes_from_dict(data.get("quotes", {})),
         dashes=_dashes_from_dict(data.get("dashes", {})),
         ellipsis=_ellipsis_from_dict(data.get("ellipsis", {})),
+        spaces=_spaces_from_dict(data.get("spaces", {})),
+        abbreviations=_abbreviations_from_dict(data.get("abbreviations", {})),
+        keep_together=_keep_together_from_dict(data.get("keep_together", {})),
         fractions_enabled=fractions_enabled,
     )

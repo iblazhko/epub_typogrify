@@ -140,6 +140,9 @@ French inserts a narrow no-break space inside guillemets and before
 | `…"` | `…␣ₕ”` | `[SEMOS §8]` |
 | `well …` before tag | spacing normalised to hair space | `[SEMOS §8]` |
 
+> Not yet implemented (deferred): the SE hair-space refinements depend partly on
+> node boundaries (Phase 3) and are scheduled after the DOM layer lands.
+
 ### 2.6 Locale code-hook conversions
 
 Irregularities handled in code rather than data (TechnicalDesign §6b):
@@ -147,12 +150,20 @@ Irregularities handled in code rather than data (TechnicalDesign §6b):
 - **English** — contractions `’tis`, `’twas`, `’twere`; `M'…` → `Mc…`;
   `i. e.` → `i.e.`, `e. g.` → `e.g.`; `A. D.` → `AD`.
   Source: `[CMOS ch.7, ch.10]`, `[SEMOS §8]`.
-- **British English (`en-GB`)** — logical punctuation placement (see §2.7);
-  applied only to unambiguous patterns. Source: `[NHR ch.9]`.
-- **German** — `„…“` / `‚…‘` nesting; optional `»…«` guillemet variant.
-  Source: `[DUDEN]`.
-- **Greek** — diacritic normalisation, mixed Latin/Greek glyph correction.
-  Source: `[U]` (Greek block, normalization), `[SEMOS §8]`.
+- **French** — narrow no-break space around high punctuation and guillemets
+  (§2.4). Source: `[IN]`.
+- **Greek** *(deferred)* — diacritic normalisation, mixed Latin/Greek glyph
+  correction. Source: `[U]` (Greek block, normalization), `[SEMOS §8]`.
+
+Two conventions that the catalogue once listed as hooks are in fact handled
+elsewhere:
+
+- **Punctuation placement** (US typesetters' vs. British logical, §2.7) is a
+  **profile-driven core rule**, not a per-locale hook: it keys off the
+  `punctuation` setting, so it applies to any locale that declares it.
+- **German `„…“` / `‚…‘` nesting** is **data-driven**: the character-based quote
+  engine produces it from the author's `"`/`'` and the `de` profile's marks, so
+  no hook is needed. Only a `»…«` variant selector would require one (deferred).
 
 ### 2.7 British vs. American English
 
@@ -180,9 +191,12 @@ inside / `[NHR ch.9]` logical style, outside):
 | `the word "cat".` | `the word “cat.”` | `the word “cat”.` |
 | `she said "go",` | `she said “go,”` | `she said “go”,` |
 
-The `en-GB` relocation is a code hook (§2.6) and is applied **only** when it is
-unambiguous that the punctuation is not part of the quoted material; otherwise
-the text is left as authored.
+Placement is driven by the `punctuation` profile setting (a core rule, not a
+hook). The active transformation is the American `typesetters` case, which moves
+a trailing period/comma **inside** the closing double quote; British `logical`
+leaves it as authored. It is applied **only** to the unambiguous `”.` / `”,`
+pattern around a closing *double* quote (the closing single quote is left alone,
+being indistinguishable from an apostrophe).
 
 **Abbreviation full stops** — British style drops the stop after a contraction
 that ends in the word's final letter (`Mr`, `Mrs`, `Dr`, `St`) but keeps it

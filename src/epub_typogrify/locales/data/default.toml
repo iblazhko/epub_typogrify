@@ -1,0 +1,19 @@
+# Shared inheritance base. Not a resolution target (see TechnicalDesign.md §6a).
+[quotes]
+double = { open = "“", close = "”" }   # “ ”
+single = { open = "‘", close = "’" }   # ‘ ’
+apostrophe = "’"                             # ’
+punctuation = "typesetters"
+
+[dashes]
+double_hyphen = "—"   # `--` -> em
+triple_hyphen = "—"   # `---` -> em
+numeric_range = "–"   # en dash
+parenthetical_spacing = "closed"
+
+[ellipsis]
+char = "…"            # …
+collapse_spaced_dots = true
+
+[fractions]
+enabled = true

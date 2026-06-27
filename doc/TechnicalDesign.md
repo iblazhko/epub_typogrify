@@ -302,22 +302,30 @@ mis-typeset correct text. Supporting that language means adding its profile
 Some languages have irregularities a table cannot capture cleanly. Each locale
 may register an ordered list of Python callables `(text, profile, ctx) -> text`:
 
-- **French** — narrow no-break space before `;:!?»` and after `«` (partly data,
-  but the spacing/exception logic is cleaner in code).
-- **German** — low/high quote nesting `„…“ ‚…‘`; `»…«` variant selection.
-- **Greek** — diacritic normalisation, mixed Latin/Greek glyph correction
-  (as in `se`).
 - **English** — historical contraction handling (`’tis`, `’twas`, `M'… → Mc…`),
-  fractions, `i.e./e.g.` spacing.
-- **British English (`en-GB`)** — the `punctuation = "logical"` setting is a
-  hook, not a pure substitution: deciding whether a trailing comma/period
-  belongs *inside* a quotation (and so stays) or *outside* (and so moves past
-  the closing quote) needs the quote context from `ContextState`. Because the
-  general case is ambiguous, the hook only relocates punctuation in
-  unambiguous patterns and otherwise leaves the text untouched.
+  Latinisms (`i.e./e.g.`, `A.D. → AD`). Applies to `en` and, via subtag
+  inheritance, to `en-GB`.
+- **French** — narrow no-break space before `;:!?` and inside `« »` (driven by
+  the `spaces` profile flags; the normalise-existing-spacing logic is cleaner in
+  code).
+- **Greek** *(deferred)* — diacritic normalisation, mixed Latin/Greek glyph
+  correction (as in `se`).
 
-Hooks are discovered through a registry (`@locale_hook("fr")`), keeping the core
-engine language-agnostic.
+Hooks are discovered through a registry (`@locale_hook("fr")`) and gathered for a
+resolved tag from general to specific (so `en-GB` runs the `en` hooks), keeping
+the core engine language-agnostic.
+
+Two things are deliberately **not** hooks:
+
+- **Punctuation placement** (American `typesetters` vs. British `logical`) is a
+  core rule keyed off `profile.quotes.punctuation`, so it serves any locale that
+  declares the setting rather than being bound to one tag. The active case is the
+  American one (move a trailing period/comma inside the closing double quote);
+  it is applied only to the unambiguous `”.`/`”,` pattern and otherwise leaves
+  the text untouched.
+- **German `„…“ ‚…‘` nesting** falls out of the character-based quote engine plus
+  the `de` profile's marks — data, not code. Only a `»…«` variant selector would
+  need a hook (deferred).
 
 ### 6c. Pipeline order
 
@@ -328,7 +336,7 @@ Order matters; the pipeline runs per text-run as:
 3. **Dashes & hyphens** — `--`/`---`, numeric & roman ranges, true minus `−`.
 4. **Ellipsis** — spaced dots → `…`, spacing around it.
 5. **Fractions** (where enabled) — `1/2 → ½`, etc.
-6. **Non-breaking spacing** — abbreviations, units/numbers, around dashes, word joiners before em dash.
+6. **Non-breaking spacing** — abbreviations, units/numbers, word joiners before em dash; then **punctuation placement** (profile-driven, §6b).
 7. **Locale code hooks** — §6b.
 8. **Cleanup** — collapse doubled spaces, strip joiners/nbsp from attributes & metadata.
 

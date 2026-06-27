@@ -10,13 +10,20 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from epub_typogrify.locales.hooks import hooks_for
 from epub_typogrify.locales.profile import LocaleProfile
 from epub_typogrify.rules.context import ContextState, Rule
 from epub_typogrify.rules.dashes import dash_rule
 from epub_typogrify.rules.ellipsis import ellipsis_rule
 from epub_typogrify.rules.fractions import fractions_rule
+from epub_typogrify.rules.punctuation import punctuation_placement_rule
 from epub_typogrify.rules.quotes import smart_quotes_rule
-from epub_typogrify.rules.spacing import collapse_whitespace, word_joiner_before_em_dash
+from epub_typogrify.rules.spacing import (
+    collapse_whitespace,
+    nonbreaking_abbreviations,
+    nonbreaking_units,
+    word_joiner_before_em_dash,
+)
 
 __all__ = ["ContextState", "Pipeline", "build_pipeline", "pre_normalise_rule"]
 
@@ -46,7 +53,7 @@ class Pipeline:
 
 
 def build_pipeline(profile: LocaleProfile, *, quotes: bool = True) -> Pipeline:
-    """Assemble the Phase 1 pipeline for *profile* in canonical order."""
+    """Assemble the pipeline for *profile* in canonical order (TechnicalDesign §6c)."""
     rules: list[Rule] = [pre_normalise_rule]
     if quotes:
         rules.append(smart_quotes_rule)
@@ -54,6 +61,13 @@ def build_pipeline(profile: LocaleProfile, *, quotes: bool = True) -> Pipeline:
     rules.append(ellipsis_rule)
     if profile.fractions_enabled:
         rules.append(fractions_rule)
+    # Stage 6: non-breaking spacing.
+    rules.append(nonbreaking_abbreviations)
+    rules.append(nonbreaking_units)
     rules.append(word_joiner_before_em_dash)
+    rules.append(punctuation_placement_rule)
+    # Stage 7: locale code hooks (general-to-specific for the resolved tag).
+    rules.extend(hooks_for(profile.tag))
+    # Stage 8: cleanup.
     rules.append(collapse_whitespace)
     return Pipeline(tuple(rules), profile)

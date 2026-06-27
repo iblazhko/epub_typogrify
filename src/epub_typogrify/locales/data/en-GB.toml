@@ -1,0 +1,14 @@
+# British English — a small delta over `en` (same quote marks; see §2.7).
+inherits = "en"
+
+[quotes]
+punctuation = "logical"   # period/comma stays outside the closing quote
+
+[dashes]
+double_hyphen = "–"            # `--` -> en dash
+parenthetical_spacing = "spaced"
+
+[abbreviations]
+# British style drops the full stop after contractions ending in the last letter.
+full_stop_after_contractions = false
+nonbreaking = ["Mr", "Mrs", "Ms", "Dr", "St", "No.", "vol.", "p."]

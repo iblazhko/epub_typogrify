@@ -7,6 +7,7 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 from epub_typogrify.chars import ELLIPSIS, EM_DASH, NO_BREAK_SPACE
+from epub_typogrify.locales.registry import LocaleRegistry
 from epub_typogrify.rules.pipeline import build_pipeline
 from tests.profiles import EN, EN_GB
 
@@ -37,5 +38,26 @@ _ALPHABET = list("ab .,;:-'\"/0129()" + EM_DASH + ELLIPSIS + NO_BREAK_SPACE + "`
 @given(st.text(alphabet=st.sampled_from(_ALPHABET), max_size=48))
 def test_pipeline_idempotent_property(text: str) -> None:
     pipeline = build_pipeline(EN)
+    once = pipeline.run(text)
+    assert pipeline.run(once) == once
+
+
+# Locale corpus exercising the Phase 2 data + hooks (nbsp, punctuation, French
+# spacing, German nesting, English elisions).
+_LOCALE_CORPUS = [
+    'Mr. Smith said "cat".',
+    "It's 'tis and o'clock; 100 km at -5 °C.",
+    "« Bonjour »  Vraiment ? Oui : non",
+    "\"Hallo\" und 'Welt' -- 1--2",
+    "i. e. this, e. g. that, in A. D. 1066",
+]
+
+
+@pytest.mark.parametrize("tag", ["en", "en-GB", "fr", "de"])
+@pytest.mark.parametrize("text", _LOCALE_CORPUS)
+def test_data_profiles_idempotent(tag: str, text: str) -> None:
+    profile = LocaleRegistry.default().resolve(tag)
+    assert profile is not None
+    pipeline = build_pipeline(profile)
     once = pipeline.run(text)
     assert pipeline.run(once) == once

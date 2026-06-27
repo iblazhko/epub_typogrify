@@ -1,0 +1,3 @@
+# Latin. Typically embedded in another language; it carries no special
+# conventions of its own and simply inherits the shared base.
+inherits = "default"

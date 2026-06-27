@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from epub_typogrify.locales.profile import LocaleProfile
 from epub_typogrify.chars import ELLIPSIS
+from epub_typogrify.locales.profile import LocaleProfile
 from epub_typogrify.rules.context import ContextState
 from epub_typogrify.rules.ellipsis import ellipsis_rule
 

@@ -37,8 +37,8 @@ uv run mypy src         # type-check
 Continuous integration (GitHub Actions) runs the lint, format-check, type-check,
 and test steps across supported Python versions on every push and pull request.
 
-> Status: **Phase 1** (pure rule engine + language-agnostic rules) is in place.
-> See [`doc/ImplementationPlan.md`](doc/ImplementationPlan.md) for the roadmap.
+> Status: **Phase 2** (locale profiles + code hooks; en, en-GB, fr, de, la) is in
+> place. See [`doc/ImplementationPlan.md`](doc/ImplementationPlan.md) for the roadmap.
 
 ## References
 

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import pytest
 
-from epub_typogrify.locales.profile import LocaleProfile
 from epub_typogrify.chars import (
     EM_DASH,
     EN_DASH,
@@ -12,6 +11,7 @@ from epub_typogrify.chars import (
     THREE_EM_DASH,
     TWO_EM_DASH,
 )
+from epub_typogrify.locales.profile import LocaleProfile
 from epub_typogrify.rules.context import ContextState
 from epub_typogrify.rules.dashes import dash_rule
 
