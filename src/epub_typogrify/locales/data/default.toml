@@ -2,13 +2,13 @@
 [quotes]
 double = { open = "“", close = "”" }   # “ ”
 single = { open = "‘", close = "’" }   # ‘ ’
-apostrophe = "’"                             # ’
+apostrophe = "’"                       # ’
 punctuation = "typesetters"
 
 [dashes]
 double_hyphen = "—"   # `--` -> em
 triple_hyphen = "—"   # `---` -> em
-numeric_range = "–"   # en dash
+numeric_range = "–"    # en dash
 parenthetical_spacing = "closed"
 
 [ellipsis]
