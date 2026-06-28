@@ -22,11 +22,17 @@ class ContextState:
     """Mutable state threaded through a pipeline run.
 
     ``prev_char`` is the last character emitted *before* the current run (used to
-    decide whether a quote opens or closes). ``quote_stack`` records the kinds of
-    quotation marks currently open (``'"'`` or ``"'"``) to track nesting depth.
+    decide whether a quote opens or closes); rules update it as they emit, so by
+    mid-pipeline it no longer reflects the previous run. ``run_prev_char`` is a
+    snapshot of ``prev_char`` taken once at the *start* of each run (by the
+    pipeline) and left untouched, so a later rule can still see the character that
+    preceded the run — e.g. the word in the previous inline node across a markup
+    boundary. ``quote_stack`` records the kinds of quotation marks currently open
+    (``'"'`` or ``"'"``) to track nesting depth.
     """
 
     prev_char: str | None = None
+    run_prev_char: str | None = None
     quote_stack: list[str] = field(default_factory=list)
 
 

@@ -16,6 +16,7 @@ Notation for invisible characters used below:
 |---|---|---|
 | No-break space | U+00A0 | `␣ₙ` |
 | Narrow no-break space | U+202F | `␣ₜ` |
+| Punctuation space | U+2008 | `␣ₚ` |
 | Hair space | U+200A | `␣ₕ` |
 | Word joiner | U+2060 | `⁤` |
 
@@ -117,10 +118,18 @@ convention — glyph from `double_hyphen`, spacing from `parenthetical_spacing`:
 | `en-GB` | `cat—black`, `cat — black`, `cat–black` | `cat␣ₙ–␣black` (spaced en) |
 | `en` (US) | `cat – black` | `cat—black` (closed em) |
 
-This rewrites authorial choices, so it is off by default. Numeric ranges
-(`1914–1918`), the two-/three-em ligatures, dashes at a run boundary
-(dialogue/list), and dash *runs* are left untouched. The spaced form uses a
-non-breaking space before the dash so it cannot begin a line.
+This rewrites authorial choices, so it is off by default. The spaced form uses a
+non-breaking space before the dash so it cannot begin a line. A dash is bound to
+its preceding word whenever it has one — **including a trailing dash at the end
+of a paragraph** (interrupted speech), which keeps the non-breaking space but no
+following space: `we gotta␣ₙ–`. Left untouched: numeric ranges (`1914–1918`),
+the two-/three-em ligatures, dash *runs*, and a dash with **no preceding word**
+(a block-start dialogue/list dash, e.g. `– Yes`).
+
+The normalisation works **across inline-markup boundaries**: a dash adjacent to
+an element (its word in a neighbouring node) is still bound, e.g. both
+`<em>this is it</em> – business` and `this is it – <em>business</em>` become
+`…it␣ₙ– business…`, and `we <em>gotta</em> –` becomes `we gotta␣ₙ–`.
 
 ### 2.3 Non-breaking spaces (keep-together)
 
@@ -151,14 +160,26 @@ French inserts a narrow no-break space inside guillemets and before
 (Per `[IN]`, the colon takes a full non-breaking space and the high punctuation
 `; ! ?` a narrow one; the engine applies the locale-configured widths.)
 
-### 2.5 Hair space around ellipsis / closing quote (English, SE house style)
-| Input | Output | Source |
-|---|---|---|
-| `…"` | `…␣ₕ”` | `[SEMOS §8]` |
-| `well …` before tag | spacing normalised to hair space | `[SEMOS §8]` |
+### 2.5 Ellipsis spacing (Standard Ebooks house style)
 
-> Not yet implemented (deferred): the SE hair-space refinements depend partly on
-> node boundaries (Phase 3) and are scheduled after the DOM layer lands.
+**Opt-in** (`--ellipsis-spacing`), spacing is
+applied around the ellipsis glyph `…` . Notation: `⁤` = word
+joiner (U+2060), `␣ₚ` = punctuation space (U+2008).
+
+| Position | Rule | Example |
+|---|---|---|
+| Before | word joiner + punctuation space + word joiner | `word⁤␣ₚ⁤…` |
+| Before — exceptions | none at a block start, or directly after an opening quote | `“…` (tight) |
+| After a word | regular space | `…␣word` |
+| After — before punctuation | punctuation space | `…␣ₚ!` |
+| After — before a closing quote | nothing (tight) | `…”` |
+
+The before-sandwich keeps the ellipsis a subtle, **non-breaking** punctuation space from
+the preceding word (the word joiners stop it wrapping to a new line). The "block
+start" and "opening quote" exceptions are resolved across inline-markup
+boundaries (via the cross-node preceding character), so an ellipsis at the start
+of a `<em>` tail is still bound to the word before it. Off by default; the rule
+implements the **English** convention and is independent of locale.
 
 ### 2.6 Locale code-hook conversions
 
@@ -213,24 +234,43 @@ Off by default — it rewrites authorial choices. Apostrophes, contractions,
 possessives, and elisions (`don't`, `dogs'`, `'92`, `'tis`) are preserved.
 Residual ambiguity: a possessive `’` inside a single-quoted span
 (`‘the dogs’ bone’`) may be read as the close — best-effort, and pre-existing.
-Quote-adjacent **punctuation relocation** (moving a comma/period across the
-closing mark) is a separate, not-yet-implemented step.
 
-**Punctuation placement** — the quote marks are identical (`“ ”`); only the
-position of the trailing period/comma differs (`[CMOS ch.6]` typesetters' style,
-inside / `[NHR ch.9]` logical style, outside):
+**Punctuation placement** — the position of a trailing period/comma relative to
+the closing quote differs by locale: `[CMOS ch.6]` typesetters' style puts it
+*inside*, `[NHR ch.9]` logical style *outside*:
 
-| Input | `en` output | `en-GB` output |
+| Input | `en` (inside) | `en-GB` (outside) |
 |---|---|---|
-| `the word "cat".` | `the word “cat.”` | `the word “cat”.` |
-| `she said "go",` | `she said “go,”` | `she said “go”,` |
+| `"cat".` | `“cat.”` | `‘cat’.` |
+| `'go',` | `‘go,’` | `“go”,` (nested) |
 
-Placement is driven by the `punctuation` profile setting (a core rule, not a
-hook). The active transformation is the American `typesetters` case, which moves
-a trailing period/comma **inside** the closing double quote; British `logical`
-leaves it as authored. It is applied **only** to the unambiguous `”.` / `”,`
-pattern around a closing *double* quote (the closing single quote is left alone,
-being indistinguishable from an apostrophe).
+This has two layers:
+
+1. **Default (always on, mild).** A trailing period/comma is moved *inside* a
+   closing **double** quote for `typesetters` locales (`“cat”.` → `“cat.”`).
+   Restricted to double quotes, since a regex cannot tell a closing single quote
+   from an apostrophe; `logical` locales are left as authored.
+2. **Opt-in (`--normalize-quote-punctuation`).** The relocation is done inside
+   the quote engine — which *does* know a `’` is a close, not an apostrophe — so
+   it applies to **single and double** closing quotes. `typesetters` (American)
+   pulls a trailing period/comma inside. `logical` (British) pushes a trailing
+   **comma** outside but **keeps sentence-terminal punctuation (`.` `!` `?`)
+   inside**, because British style retains it inside when the quotation is, or
+   ends with, a complete sentence — the common dialogue case:
+
+   > `‘Not today’, Skinner said. ‘Not like the other day … around.’`
+
+   The comma after the fragment *Not today* moves outside; the period that ends
+   the complete-sentence quotation stays inside. A trailing ellipsis (a run of
+   dots) is never split. Combine with `--normalize-quotes` to conform a document
+   to full locale house style.
+
+   **Limitation.** Distinguishing a complete-sentence quotation from an embedded
+   fragment (where logical style *would* move a terminal period outside, e.g.
+   `he called it ‘a disgrace’.`) is not reliably decidable, so terminal
+   punctuation is left where the author placed it rather than risk the more
+   jarring error of ejecting a sentence's full stop. Only the unambiguous comma
+   is relocated.
 
 **Abbreviation full stops** — British style drops the stop after a contraction
 that ends in the word's final letter (`Mr`, `Mrs`, `Dr`, `St`) but keeps it

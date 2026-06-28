@@ -80,6 +80,8 @@ class TextWalker:
         block_tags: frozenset[str] = BLOCK_TAGS,
         normalize_dashes: bool = False,
         normalize_quotes: bool = False,
+        normalize_quote_punctuation: bool = False,
+        ellipsis_spacing: bool = False,
     ) -> None:
         self._registry = registry
         self._resolver = resolver
@@ -87,6 +89,8 @@ class TextWalker:
         self._block = block_tags
         self._normalize_dashes = normalize_dashes
         self._normalize_quotes = normalize_quotes
+        self._normalize_quote_punctuation = normalize_quote_punctuation
+        self._ellipsis_spacing = ellipsis_spacing
         self._pipelines: dict[str, Pipeline] = {}
 
     def process(self, root: etree._Element) -> None:
@@ -126,6 +130,8 @@ class TextWalker:
                 profile,
                 normalize_dashes=self._normalize_dashes,
                 normalize_quotes=self._normalize_quotes,
+                normalize_quote_punctuation=self._normalize_quote_punctuation,
+                ellipsis_spacing=self._ellipsis_spacing,
             )
             self._pipelines[profile.tag] = pipeline
         return pipeline

@@ -95,3 +95,62 @@ def test_publication_language_fallback() -> None:
     )
     out = typogrify_bytes(source.encode("utf-8"), publication_lang="en").decode()
     assert f"done{ELL}" in out
+
+
+_GB_HEADER = (
+    '<?xml version="1.0" encoding="utf-8"?>\n'
+    '<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-GB">\n'
+)
+NBSP = chars.NO_BREAK_SPACE
+EN = chars.EN_DASH
+
+
+def _gb_dashes(body: str) -> str:
+    source = _GB_HEADER + body + "\n</html>"
+    return typogrify_bytes(source.encode("utf-8"), normalize_dashes=True).decode()
+
+
+def test_parenthetical_dash_binds_across_inline_boundary_in_tail() -> None:
+    # Dash in the tail of <em>: its preceding word is in the previous inline node.
+    out = _gb_dashes("<body><p><em>this is it</em> – business as usual</p></body>")
+    assert f"</em>{NBSP}{EN} business as usual" in out
+
+
+def test_parenthetical_dash_binds_across_inline_boundary_before_element() -> None:
+    # Dash before <em>: its following word is in the next inline node.
+    out = _gb_dashes("<body><p>this is it – <em>business as usual</em></p></body>")
+    assert f"this is it{NBSP}{EN} <em>" in out
+
+
+def test_block_start_dash_is_left_alone() -> None:
+    # A dash at the very start of a block (dialogue/list) has no preceding word.
+    out = _gb_dashes("<body><p>– Yes, indeed.</p></body>")
+    assert "<p>– Yes" in out  # unchanged, no nbsp inserted
+    assert NBSP not in out
+
+
+WJ = chars.WORD_JOINER
+PS = chars.PUNCTUATION_SPACE
+
+
+def test_ellipsis_spacing_opt_in_and_inline_boundary() -> None:
+    source = (
+        '<?xml version="1.0" encoding="utf-8"?>\n'
+        '<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">\n'
+        "<body><p>well<em>now</em>... <em>then</em>...</p></body>\n</html>"
+    )
+    out = typogrify_bytes(source.encode("utf-8"), ellipsis_spacing=True).decode()
+    # The ellipsis in the tail of <em>now</em> binds across the boundary, and the
+    # trailing ellipsis at paragraph end gets the before-sandwich but no after-space.
+    assert f"</em>{WJ}{PS}{WJ}{ELL} <em>then</em>{WJ}{PS}{WJ}{ELL}" in out
+
+
+def test_ellipsis_spacing_off_by_default() -> None:
+    source = (
+        '<?xml version="1.0" encoding="utf-8"?>\n'
+        '<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">\n'
+        "<body><p>Wait... what</p></body>\n</html>"
+    )
+    out = typogrify_bytes(source.encode("utf-8")).decode()
+    assert f"Wait{ELL} what" in out  # collapsed only, no spacing
+    assert WJ not in out

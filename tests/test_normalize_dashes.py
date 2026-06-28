@@ -53,11 +53,18 @@ def test_en_us_closed_em_dash(text: str, expected: str) -> None:
     assert _us(text) == expected
 
 
-def test_ranges_and_boundaries_are_left_alone() -> None:
+def test_ranges_and_dialogue_dashes_are_left_alone() -> None:
     assert _gb("1914-1918") == f"1914{EN}1918"  # hyphen range -> en (normal rule)
     assert _gb(f"1914{EM}1918") == f"1914{WJ}{EM}1918"  # em between digits: not parenthetical
-    assert _gb(f"{EM}go on") == f"{WJ}{EM}go on"  # leading dash (dialogue/list)
-    assert _gb(f"the end{EM}") == f"the end{WJ}{EM}"  # trailing dash
+    assert _gb(f"{EM}go on") == f"{WJ}{EM}go on"  # leading dash (dialogue/list): no preceding word
+
+
+def test_trailing_interrupted_dash_is_bound() -> None:
+    # A trailing dash (interrupted speech) has a preceding word, so it is bound
+    # with a non-breaking space — but no following space.
+    assert _gb(f"we gotta{EM}") == f"we gotta{NBSP}{EN}"
+    assert _gb("we gotta --") == f"we gotta{NBSP}{EN}"
+    assert _gb(f"we gotta {EN}") == f"we gotta{NBSP}{EN}"
 
 
 def test_ligatures_are_left_alone() -> None:

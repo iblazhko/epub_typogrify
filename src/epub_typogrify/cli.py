@@ -30,6 +30,8 @@ class _Options:
     default_lang: str | None
     normalize_dashes: bool
     normalize_quotes: bool
+    normalize_quote_punctuation: bool
+    ellipsis_spacing: bool
 
 
 @click.command(context_settings={"help_option_names": ["-h", "--help"]})
@@ -64,6 +66,22 @@ class _Options:
     help="Also reflow quotation marks (straight or curly) to the locale's nesting "
     "convention (e.g. single-outer for en-GB). Off by default.",
 )
+@click.option(
+    "--normalize-quote-punctuation",
+    "normalize_quote_punctuation",
+    is_flag=True,
+    help="Also relocate a comma/period across a closing quote per the locale style "
+    "(inside for en, outside for en-GB). Off by default. Combine with "
+    "--normalize-quotes for already-curly text.",
+)
+@click.option(
+    "--ellipsis-spacing",
+    "ellipsis_spacing",
+    is_flag=True,
+    help="Also apply the spacing around ellipses "
+    "(word joiner + punctuation space before; punctuation space before following punctuation). "
+    "Off by default.",
+)
 def main(
     targets: tuple[Path, ...],
     default_lang: str | None,
@@ -71,10 +89,18 @@ def main(
     verbose: bool,
     normalize_dashes: bool,
     normalize_quotes: bool,
+    normalize_quote_punctuation: bool,
+    ellipsis_spacing: bool,
 ) -> None:
     """Apply language-aware typographic conversions to EPUB source files."""
     registry = LocaleRegistry.default()
-    options = _Options(default_lang, normalize_dashes, normalize_quotes)
+    options = _Options(
+        default_lang,
+        normalize_dashes,
+        normalize_quotes,
+        normalize_quote_punctuation,
+        ellipsis_spacing,
+    )
     stats = _Stats()
     for target in targets:
         if target.is_dir():
@@ -114,6 +140,8 @@ def _process_directory(
             default_lang=options.default_lang,
             normalize_dashes=options.normalize_dashes,
             normalize_quotes=options.normalize_quotes,
+            normalize_quote_punctuation=options.normalize_quote_punctuation,
+            ellipsis_spacing=options.ellipsis_spacing,
         )
         _finish(document, doc_path, data, label, dry_run, verbose, stats)
 
@@ -142,6 +170,8 @@ def _process_loose_file(
         default_lang=options.default_lang,
         normalize_dashes=options.normalize_dashes,
         normalize_quotes=options.normalize_quotes,
+        normalize_quote_punctuation=options.normalize_quote_punctuation,
+        ellipsis_spacing=options.ellipsis_spacing,
     )
     _finish(document, path, data, path, dry_run, verbose, stats)
 

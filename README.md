@@ -48,6 +48,8 @@ so run it from a clean version-control state and review the diff.
 | `-l`, `--default-lang TAG` | Fallback language (BCP-47, e.g. `en`, `en-GB`, `fr`) for text that declares none. If omitted, text with no resolvable language is left unchanged — no default is assumed. |
 | `--normalize-dashes` | Also rewrite existing parenthetical em/en dashes to the locale convention (e.g. closed em dashes for `en`, spaced en dashes for `en-GB`). Off by default — it rewrites authorial dash choices, so it is opt-in. |
 | `--normalize-quotes` | Also reflow quotation marks (straight *or* curly, in any combination) to the locale's nesting convention — double-outer for `en`, single-outer for `en-GB`. Off by default (same opt-in rationale). |
+| `--normalize-quote-punctuation` | Also relocate quote-adjacent punctuation per the locale style — `en` (typesetters') pulls a trailing period/comma *inside*; `en-GB` (logical) pushes a trailing comma *outside* but keeps a sentence-terminal `.`/`!`/`?` *inside* a complete-sentence quotation. Off by default. For already-curly text, combine with `--normalize-quotes`. |
+| `--ellipsis-spacing` | Apply spacing around ellipses: a non-breaking word-joiner + punctuation space before the `…` (except at a block start or after an opening quote), a punctuation space before following punctuation, and a regular space before a following word. English style; off by default. |
 | `--dry-run` | Report what would change; write nothing. |
 | `-v`, `--verbose` | Per-file reporting (`conv` changed, `skip` ignored section, `--` unchanged). |
 | `-h`, `--help` | Show help and exit. |
@@ -85,6 +87,10 @@ epub_typogrify --default-lang en src/chapter-1.xhtml src/chapter-2.xhtml
 # Also normalise existing em dashes to the locale convention (e.g. a British
 # book that uses closed em dashes -> spaced en dashes).
 epub_typogrify --normalize-dashes path/to/book/
+
+# Conform a British book to full house style: single-outer quote nesting with
+# punctuation outside the closing quotes.
+epub_typogrify --normalize-quotes --normalize-quote-punctuation path/to/book/
 ```
 
 The full catalogue of conversions is in

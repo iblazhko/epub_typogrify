@@ -16,13 +16,21 @@ Apostrophes are distinguished from single quotes heuristically (contractions,
 possessives, year/decade elisions like ``'92``, and leading elisions like
 ``'tis``). A residual ambiguity remains for a possessive ``’`` inside a
 single-quoted span (``‘the dogs’ bone’``); that is left best-effort.
+
+Optionally (opt-in, ``--normalize-quote-punctuation``) the engine also relocates
+quote-adjacent punctuation across the closing mark per ``quotes.punctuation``:
+``typesetters`` (American) pulls a trailing period/comma *inside*; ``logical``
+(British) pushes a trailing **comma** *outside* but leaves sentence-terminal
+``.``/``!``/``?`` in place (it stays inside a complete-sentence quotation). Done
+here — not as a regex — because only the engine knows a given ``’`` is a closing
+quote rather than an apostrophe.
 """
 
 from __future__ import annotations
 
 from epub_typogrify import chars
 from epub_typogrify.locales.profile import LocaleProfile, QuotePair, Quotes
-from epub_typogrify.rules.context import ContextState
+from epub_typogrify.rules.context import ContextState, Rule
 
 _LEFT_DOUBLE = chars.LEFT_DOUBLE_QUOTE
 _RIGHT_DOUBLE = chars.RIGHT_DOUBLE_QUOTE
@@ -133,40 +141,120 @@ def _pair(quotes: Quotes, kind: str, depth: int, normalize: bool) -> QuotePair:
     return quotes.double if kind == '"' else quotes.single
 
 
-def _convert(text: str, profile: LocaleProfile, ctx: ContextState, *, normalize: bool) -> str:
+# `typesetters` (American) places both periods and commas inside the quote.
+_PULL_INSIDE = frozenset(".,")
+
+
+def _pop_inner_punct(out: list[str]) -> str:
+    """Pop a trailing **comma** from emitted content for the ``logical`` push-outside
+    direction.
+
+    Sentence-terminal punctuation (``.``/``!``/``?``) is deliberately *not* moved:
+    British logical style keeps it **inside** when the quotation is, or ends with, a
+    complete sentence (the common dialogue case — ``‘…around.’``), and only outside
+    for an embedded fragment (``‘a disgrace’.``). Reliably telling those apart is an
+    NLP-grade problem, so we move only the comma (which is the matrix sentence's, not
+    the quote's) and leave terminal punctuation where the author placed it.
+    """
+    if out and out[-1] == "," and (len(out) < 2 or out[-2] not in _PULL_INSIDE):
+        return out.pop()
+    return ""
+
+
+def _following_punct(text: str, j: int, out: list[str]) -> str:
+    """A single ``.``/``,`` at ``text[j]`` to pull inside (``typesetters``), unless
+    it is part of a run or punctuation already sits just inside the quote."""
+    if (
+        j < len(text)
+        and text[j] in _PULL_INSIDE
+        and (j + 1 >= len(text) or text[j + 1] not in _PULL_INSIDE)
+    ):
+        if out and out[-1] in _PULL_INSIDE:
+            return ""  # already punctuation inside — don't duplicate
+        return text[j]
+    return ""
+
+
+def _convert(
+    text: str,
+    profile: LocaleProfile,
+    ctx: ContextState,
+    *,
+    normalize: bool,
+    relocate: bool,
+) -> str:
     quotes = profile.quotes
+    direction = quotes.punctuation if relocate else None  # "typesetters" | "logical" | None
     out: list[str] = []
     prev = ctx.prev_char
     stack = ctx.quote_stack
+    n = len(text)
+    i = 0
 
-    for i in range(len(text)):
+    while i < n:
         char = text[i]
         role, kind = _classify(text, i, prev, stack, normalize)
         if role is None:
             out.append(char)
             prev = char
+            i += 1
             continue
         if role == "apostrophe":
-            glyph = quotes.apostrophe
-        elif role == "open":
+            out.append(quotes.apostrophe)
+            prev = quotes.apostrophe
+            i += 1
+            continue
+        if role == "open":
             glyph = _pair(quotes, kind, len(stack), normalize).open
             stack.append(kind)
-        else:  # close
-            if stack and stack[-1] == kind:
-                stack.pop()
-            glyph = _pair(quotes, kind, len(stack), normalize).close
+            out.append(glyph)
+            prev = glyph
+            i += 1
+            continue
+
+        # close
+        if stack and stack[-1] == kind:
+            stack.pop()
+        glyph = _pair(quotes, kind, len(stack), normalize).close
+        if direction == "logical":
+            moved = _pop_inner_punct(out)
+            out.append(glyph)
+            if moved:
+                out.append(moved)
+            prev = moved or glyph
+            i += 1
+            continue
+        if direction == "typesetters":
+            punct = _following_punct(text, i + 1, out)
+            if punct:
+                out.append(punct)
+                out.append(glyph)
+                prev = glyph
+                i += 1 + len(punct)
+                continue
         out.append(glyph)
         prev = glyph
+        i += 1
 
     ctx.prev_char = prev
     return "".join(out)
 
 
+def make_quote_rule(*, normalize: bool, relocate: bool) -> Rule:
+    """Build the quote rule with the given modes (used by the pipeline)."""
+
+    def rule(text: str, profile: LocaleProfile, ctx: ContextState) -> str:
+        return _convert(text, profile, ctx, normalize=normalize, relocate=relocate)
+
+    return rule
+
+
+# Convenience rules for the default modes (used directly in tests).
 def smart_quotes_rule(text: str, profile: LocaleProfile, ctx: ContextState) -> str:
     """Character-based smart quotes (default): straight ``"``/``'`` only."""
-    return _convert(text, profile, ctx, normalize=False)
+    return _convert(text, profile, ctx, normalize=False, relocate=False)
 
 
 def normalize_quotes_rule(text: str, profile: LocaleProfile, ctx: ContextState) -> str:
     """Reflow straight *and* curly quotes to the locale's nesting convention."""
-    return _convert(text, profile, ctx, normalize=True)
+    return _convert(text, profile, ctx, normalize=True, relocate=False)

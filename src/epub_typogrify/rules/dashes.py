@@ -66,25 +66,50 @@ def normalize_parenthetical_dashes(text: str, profile: LocaleProfile, ctx: Conte
     and spacing from ``dashes.parenthetical_spacing`` — closed (``cat—black``) for
     American English, spaced (``cat – black``) for British English.
 
-    Left untouched: numeric ranges (digits on both sides), the two-/three-em
-    ligatures, a dash at a run boundary (likely a dialogue/list dash), and a dash
-    whose neighbour is itself a dash (a dash *run*, not a clean separator).
+    Works across inline-markup boundaries: a dash at the *start* of a run takes its
+    preceding neighbour from ``ctx.run_prev_char`` (the word in the previous inline
+    node), and a dash with trailing whitespace at the *end* of a run is treated as
+    having following content in the next node. So
+    ``<em>this is it</em> – business`` and ``this is it – <em>business</em>`` both
+    bind the dash to the preceding word.
+
+    A dash is bound to its preceding word whenever it has one — including a
+    trailing dash at the end of a paragraph (interrupted speech), which keeps the
+    non-breaking space but no following space (``gotta␣ₙ–``). Left untouched:
+    numeric ranges (digits on both sides), the two-/three-em ligatures, a dash with
+    *no* preceding word (a block-start dialogue/list dash), and a dash whose
+    neighbour is itself a dash (a dash *run*).
     """
     glyph = profile.dashes.double_hyphen
     spaced = profile.dashes.parenthetical_spacing == "spaced"
 
     def replace(match: re.Match[str]) -> str:
         whole: str = match.group(0)
-        before = _neighbour(text, match.start() - 1, -1)
+        # Preceding neighbour: local, or — at the run start — the last char of the
+        # previous run (the word in a preceding inline node). A previous run ending
+        # in whitespace, or a block start (None), counts as no preceding word.
+        if match.start() > 0:
+            before = _neighbour(text, match.start() - 1, -1)
+        else:
+            prev = ctx.run_prev_char
+            before = prev if prev and not prev.isspace() else ""
+        # Following neighbour: local, or — when the run ends right after the dash's
+        # trailing space — assume content follows in the next inline node.
         after = _neighbour(text, match.end(), 1)
-        if before == "" or after == "":
-            return whole  # run boundary: leave dialogue/list dashes alone
+        if after == "" and whole[-1] in _TRANSPARENT and whole[-1] != chars.WORD_JOINER:
+            after = " "  # trailing space before a markup boundary
+
         if before in _DASHES or after in _DASHES:
             return whole  # part of a dash run, not a clean parenthetical
         if before.isdigit() and after.isdigit():
             return whole  # numeric range
+        if before == "":
+            return whole  # no preceding word: block-start dialogue/list dash
+
         if spaced:
-            return chars.NO_BREAK_SPACE + glyph + " "
+            # Bind to the preceding word; keep a following space only when content
+            # follows (a trailing/interrupted dash ends the line at the dash).
+            return chars.NO_BREAK_SPACE + glyph + (" " if after else "")
         return glyph
 
     result: str = _PARENTHETICAL_DASH.sub(replace, text)

@@ -21,6 +21,8 @@ def typogrify_document(
     default_lang: str | None = None,
     normalize_dashes: bool = False,
     normalize_quotes: bool = False,
+    normalize_quote_punctuation: bool = False,
+    ellipsis_spacing: bool = False,
 ) -> None:
     """Apply typographic conversions to *document* in place."""
     resolver = LanguageResolver(publication_lang=publication_lang, default_lang=default_lang)
@@ -29,6 +31,8 @@ def typogrify_document(
         resolver,
         normalize_dashes=normalize_dashes,
         normalize_quotes=normalize_quotes,
+        normalize_quote_punctuation=normalize_quote_punctuation,
+        ellipsis_spacing=ellipsis_spacing,
     ).process(document.root)
 
 
@@ -40,6 +44,8 @@ def typogrify_bytes(
     default_lang: str | None = None,
     normalize_dashes: bool = False,
     normalize_quotes: bool = False,
+    normalize_quote_punctuation: bool = False,
+    ellipsis_spacing: bool = False,
 ) -> bytes:
     """Convert the text content of an XHTML document given as bytes."""
     document = XhtmlDocument.from_bytes(data)
@@ -50,5 +56,7 @@ def typogrify_bytes(
         default_lang=default_lang,
         normalize_dashes=normalize_dashes,
         normalize_quotes=normalize_quotes,
+        normalize_quote_punctuation=normalize_quote_punctuation,
+        ellipsis_spacing=ellipsis_spacing,
     )
     return document.to_bytes()

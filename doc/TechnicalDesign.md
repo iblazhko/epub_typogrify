@@ -335,11 +335,11 @@ Two things are deliberately **not** hooks:
 Order matters; the pipeline runs per text-run as:
 
 1. **Pre-normalisation** — Gutenberg backtick→apostrophe, optional whitespace collapse.
-2. **Smart quotes & apostrophes** — context-aware, using profile quote chars + the cross-node `ContextState`. **Opt-in** (`--normalize-quotes`), this instead reflows quotes (straight *or* curly) to the locale's nesting convention by depth (§2.7).
+2. **Smart quotes & apostrophes** — context-aware, using profile quote chars + the cross-node `ContextState`. **Opt-in** (`--normalize-quotes`), this instead reflows quotes (straight *or* curly) to the locale's nesting convention by depth (§2.7). **Opt-in** (`--normalize-quote-punctuation`), it also relocates quote-adjacent punctuation across the closing mark per the locale's `punctuation` (here, where a `’` is known to be a close — not as the stage-6 regex): `typesetters` pulls a period/comma inside; `logical` pushes a comma outside but keeps a sentence-terminal `.`/`!`/`?` inside a complete-sentence quotation (§2.7). The stage-6 placement rule is dropped.
 3. **Dashes & hyphens** — `--`/`---`, numeric & roman ranges, true minus `−`; then, **opt-in** (`--normalize-dashes`), rewrite existing parenthetical dashes to the locale convention (§2.2).
-4. **Ellipsis** — spaced dots → `…`, spacing around it.
+4. **Ellipsis** — spaced dots → `…`. **Opt-in** (`--ellipsis-spacing`), spacing around the glyph (word joiner + punctuation space before, etc.) is applied later, after quotes/dashes/punctuation are final (§2.5).
 5. **Fractions** (where enabled) — `1/2 → ½`, etc.
-6. **Non-breaking spacing** — abbreviations, units/numbers, word joiners before em dash; then **punctuation placement** (profile-driven, §6b).
+6. **Non-breaking spacing** — abbreviations, units/numbers, word joiners before em dash; then **punctuation placement** (profile-driven, §6b) — unless stage 2 already relocated it under `--normalize-quote-punctuation`.
 7. **Locale code hooks** — §6b.
 8. **Cleanup** — collapse doubled spaces, strip joiners/nbsp from attributes & metadata.
 

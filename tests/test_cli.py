@@ -119,3 +119,40 @@ def test_normalize_quotes_flag(tmp_path: Path) -> None:
     text = file.read_text(encoding="utf-8")
     assert f"{lsq}stop{rsq}" in text
     assert ldq not in text
+
+
+def test_normalize_quote_punctuation_flag(tmp_path: Path) -> None:
+    lsq = chars.LEFT_SINGLE_QUOTE
+    rsq = chars.RIGHT_SINGLE_QUOTE
+    body = (
+        '<?xml version="1.0" encoding="utf-8"?>\n'
+        '<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-GB">'
+        '<body><p>"Not today," he said. "The end."</p></body></html>'
+    )
+    file = tmp_path / "gb.xhtml"
+    file.write_text(body, encoding="utf-8")
+    # Full British house style: single-outer nesting, the fragment comma moves
+    # outside, but the complete-sentence terminal period stays inside.
+    result = CliRunner().invoke(
+        main, ["--normalize-quotes", "--normalize-quote-punctuation", str(file)]
+    )
+    assert result.exit_code == 0, result.output
+    text = file.read_text(encoding="utf-8")
+    assert f"{lsq}Not today{rsq}, he said." in text
+    assert f"{lsq}The end.{rsq}" in text
+
+
+def test_ellipsis_spacing_flag(tmp_path: Path) -> None:
+    wj = chars.WORD_JOINER
+    ps = chars.PUNCTUATION_SPACE
+    ell = chars.ELLIPSIS
+    file = tmp_path / "en.xhtml"
+    file.write_text(
+        '<?xml version="1.0" encoding="utf-8"?>\n'
+        '<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">'
+        "<body><p>Wait... what</p></body></html>",
+        encoding="utf-8",
+    )
+    result = CliRunner().invoke(main, ["--ellipsis-spacing", str(file)])
+    assert result.exit_code == 0, result.output
+    assert f"Wait{wj}{ps}{wj}{ell} what" in file.read_text(encoding="utf-8")

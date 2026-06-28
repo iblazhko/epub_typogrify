@@ -14,10 +14,10 @@ from epub_typogrify.locales.hooks import hooks_for
 from epub_typogrify.locales.profile import LocaleProfile
 from epub_typogrify.rules.context import ContextState, Rule
 from epub_typogrify.rules.dashes import dash_rule, normalize_parenthetical_dashes
-from epub_typogrify.rules.ellipsis import ellipsis_rule
+from epub_typogrify.rules.ellipsis import ellipsis_rule, ellipsis_spacing_rule
 from epub_typogrify.rules.fractions import fractions_rule
 from epub_typogrify.rules.punctuation import punctuation_placement_rule
-from epub_typogrify.rules.quotes import normalize_quotes_rule, smart_quotes_rule
+from epub_typogrify.rules.quotes import make_quote_rule
 from epub_typogrify.rules.spacing import (
     collapse_whitespace,
     nonbreaking_abbreviations,
@@ -43,6 +43,9 @@ class Pipeline:
     def run(self, text: str, ctx: ContextState | None = None) -> str:
         if ctx is None:
             ctx = ContextState()
+        # Snapshot the character preceding this run before any rule mutates
+        # prev_char, so boundary-sensitive rules can see across a markup boundary.
+        ctx.run_prev_char = ctx.prev_char
         for rule in self.rules:
             text = rule(text, self.profile, ctx)
         if text:
@@ -58,16 +61,26 @@ def build_pipeline(
     quotes: bool = True,
     normalize_dashes: bool = False,
     normalize_quotes: bool = False,
+    normalize_quote_punctuation: bool = False,
+    ellipsis_spacing: bool = False,
 ) -> Pipeline:
     """Assemble the pipeline for *profile* in canonical order (TechnicalDesign §6c).
 
     ``normalize_dashes`` (opt-in) rewrites existing parenthetical em/en dashes to
     the locale convention (§2.2). ``normalize_quotes`` (opt-in) reflows quotation
     marks — straight or curly — to the locale's nesting convention (§2.7).
+    ``normalize_quote_punctuation`` (opt-in) relocates a quote-adjacent comma/period
+    across the closing mark per the locale's ``punctuation`` setting; the quote
+    engine handles it (so it knows a ``’`` is a close, not an apostrophe), and the
+    default standalone placement rule is dropped when it is active.
+    ``ellipsis_spacing`` (opt-in) applies the Standard Ebooks spacing convention
+    around ellipses (§2.5).
     """
     rules: list[Rule] = [pre_normalise_rule]
     if quotes:
-        rules.append(normalize_quotes_rule if normalize_quotes else smart_quotes_rule)
+        rules.append(
+            make_quote_rule(normalize=normalize_quotes, relocate=normalize_quote_punctuation)
+        )
     rules.append(dash_rule)
     if normalize_dashes:
         rules.append(normalize_parenthetical_dashes)
@@ -78,9 +91,16 @@ def build_pipeline(
     rules.append(nonbreaking_abbreviations)
     rules.append(nonbreaking_units)
     rules.append(word_joiner_before_em_dash)
-    rules.append(punctuation_placement_rule)
+    if not normalize_quote_punctuation:
+        # The default placement rule (typesetters, double quotes) — superseded by
+        # the quote engine's relocation when that is enabled.
+        rules.append(punctuation_placement_rule)
     # Stage 7: locale code hooks (general-to-specific for the resolved tag).
     rules.extend(hooks_for(profile.tag))
+    if ellipsis_spacing:
+        # After quotes/dashes/punctuation are final, so the exceptions (opening
+        # quote, following punctuation) see the resolved glyphs.
+        rules.append(ellipsis_spacing_rule)
     # Stage 8: cleanup.
     rules.append(collapse_whitespace)
     return Pipeline(tuple(rules), profile)
