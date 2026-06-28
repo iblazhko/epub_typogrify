@@ -105,6 +105,23 @@ nesting convention.
 | `de` | `–` (en) | Halbgeviertstrich, spaced | `[DUDEN]` |
 | `fr` | `—` (em) | dialogue dash + space | `[IN]` |
 
+The table above describes what the author shorthand `--`/`---` becomes. An
+**existing** em/en dash is left as the author wrote it by default.
+
+**Opt-in: normalise existing parenthetical dashes** (`--normalize-dashes`). When
+enabled, an already-typed parenthetical em/en dash is rewritten to the locale's
+convention — glyph from `double_hyphen`, spacing from `parenthetical_spacing`:
+
+| Locale | Input | Output |
+|---|---|---|
+| `en-GB` | `cat—black`, `cat — black`, `cat–black` | `cat␣ₙ–␣black` (spaced en) |
+| `en` (US) | `cat – black` | `cat—black` (closed em) |
+
+This rewrites authorial choices, so it is off by default. Numeric ranges
+(`1914–1918`), the two-/three-em ligatures, dashes at a run boundary
+(dialogue/list), and dash *runs* are left untouched. The spaced form uses a
+non-breaking space before the dash so it cannot begin a line.
+
 ### 2.3 Non-breaking spaces (keep-together)
 
 Inserted so paired tokens never split across a line:
@@ -177,10 +194,27 @@ delta over it. US conventions follow `[CMOS]`; British conventions follow `[NHR]
 | Parenthetical dash (§2.2) | em, closed: `cat—black—ran` | en, spaced: `cat – black – ran` | `[CMOS ch.6]` / `[NHR ch.4]` |
 | Title abbreviations (§2.3) | `Mr.` `Mrs.` `Dr.` `St.` | `Mr` `Mrs` `Dr` `St` (no stop) | `[CMOS ch.10]` / `[NHR ch.10]` |
 
-> **Quote marks are *not* a difference the tool applies.** Both locales map
-> `"` → `“ ”` and `'` → `‘ ’` (§2.1). British single-as-outer is the author's
-> choice of straight mark, rendered faithfully; the tool does not convert
-> American-style nesting into British or vice versa.
+> **Quote marks: by default *not* a difference the tool applies.** Both locales
+> map `"` → `“ ”` and `'` → `‘ ’` (§2.1). British single-as-outer is, by default,
+> the author's choice of straight mark, rendered faithfully.
+
+**Opt-in: normalise quote nesting** (`--normalize-quotes`). When enabled, the
+engine reads quotation marks — **straight or curly, in any combination** — and
+re-emits them by **nesting depth**: the outermost level uses the locale's
+*primary* mark (`quotes.outer`), the next its *secondary*, alternating. So a
+document quoted in one convention is reflowed to its locale's:
+
+| Locale (`outer`) | Input | Output |
+|---|---|---|
+| `en` (double) | `'systems', he said, "with us"` | `“systems,” he said, ‘with us’` |
+| `en-GB` (single) | `"systems," he said, 'with us'` | `‘systems,’ he said, “with us”` |
+
+Off by default — it rewrites authorial choices. Apostrophes, contractions,
+possessives, and elisions (`don't`, `dogs'`, `'92`, `'tis`) are preserved.
+Residual ambiguity: a possessive `’` inside a single-quoted span
+(`‘the dogs’ bone’`) may be read as the close — best-effort, and pre-existing.
+Quote-adjacent **punctuation relocation** (moving a comma/period across the
+closing mark) is a separate, not-yet-implemented step.
 
 **Punctuation placement** — the quote marks are identical (`“ ”`); only the
 position of the trailing period/comma differs (`[CMOS ch.6]` typesetters' style,

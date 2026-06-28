@@ -28,18 +28,32 @@ class QuotePair:
 class Quotes:
     """Quotation-mark conventions for a locale.
 
-    The quote engine is character-based: a straight ``"`` becomes the ``double``
-    pair, a straight ``'`` the ``single`` pair (or ``apostrophe``). This preserves
-    the author's double/single distinction rather than reflowing nesting, matching
-    established tools. ``punctuation`` is ``"typesetters"`` (commas/periods inside
-    the closing quote, US style) or ``"logical"`` (British style); the relocation
-    itself is a Phase 2 hook.
+    By default the quote engine is character-based: a straight ``"`` becomes the
+    ``double`` pair, a straight ``'`` the ``single`` pair (or ``apostrophe``),
+    preserving the author's double/single distinction.
+
+    ``outer`` (``"double"`` or ``"single"``) names which pair is the *top level*
+    quotation; it is only consumed by the opt-in nesting normalisation, where
+    ``primary``/``secondary`` are assigned by nesting depth. ``punctuation`` is
+    ``"typesetters"`` (commas/periods inside the closing quote, US style) or
+    ``"logical"`` (British style).
     """
 
     double: QuotePair
     single: QuotePair
     apostrophe: str = chars.APOSTROPHE
     punctuation: str = "typesetters"
+    outer: str = "double"
+
+    @property
+    def primary(self) -> QuotePair:
+        """The top-level (outermost) pair, per ``outer``."""
+        return self.double if self.outer == "double" else self.single
+
+    @property
+    def secondary(self) -> QuotePair:
+        """The nested pair (the other of ``double``/``single``)."""
+        return self.single if self.outer == "double" else self.double
 
 
 @dataclass(frozen=True)
@@ -118,6 +132,7 @@ def _quotes_from_dict(data: Mapping[str, Any]) -> Quotes:
         single=QuotePair(**single) if single else _DEFAULT_SINGLE,
         apostrophe=data.get("apostrophe", chars.APOSTROPHE),
         punctuation=data.get("punctuation", "typesetters"),
+        outer=data.get("outer", "double"),
     )
 
 

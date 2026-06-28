@@ -41,3 +41,51 @@ def dash_rule(text: str, profile: LocaleProfile, ctx: ContextState) -> str:
     text = _ROMAN_RANGE.sub(lambda m: m.group(1) + dashes.numeric_range + m.group(2), text)
     text = _MINUS.sub(chars.MINUS_SIGN, text)
     return text
+
+
+# A single em/en dash with any surrounding spacing — and an absorbed word joiner,
+# which a later stage may have inserted before an em dash on a previous run (so it
+# is not left orphaned, and the rule stays idempotent).
+_AFFIX = " " + chars.NO_BREAK_SPACE + chars.NARROW_NO_BREAK_SPACE + chars.WORD_JOINER
+_PARENTHETICAL_DASH = re.compile(
+    "[" + _AFFIX + "]*([" + chars.EM_DASH + chars.EN_DASH + "])[" + _AFFIX + "]*"
+)
+_TRANSPARENT = frozenset(_AFFIX)
+_DASHES = frozenset(chars.EM_DASH + chars.EN_DASH)
+
+
+def _neighbour(text: str, index: int, step: int) -> str:
+    while 0 <= index < len(text) and text[index] in _TRANSPARENT:
+        index += step
+    return text[index] if 0 <= index < len(text) else ""
+
+
+def normalize_parenthetical_dashes(text: str, profile: LocaleProfile, ctx: ContextState) -> str:
+    """Normalise an existing parenthetical em/en dash to the locale convention
+    (opt-in, TypographyConversions.md §2.2): glyph from ``dashes.double_hyphen``
+    and spacing from ``dashes.parenthetical_spacing`` — closed (``cat—black``) for
+    American English, spaced (``cat – black``) for British English.
+
+    Left untouched: numeric ranges (digits on both sides), the two-/three-em
+    ligatures, a dash at a run boundary (likely a dialogue/list dash), and a dash
+    whose neighbour is itself a dash (a dash *run*, not a clean separator).
+    """
+    glyph = profile.dashes.double_hyphen
+    spaced = profile.dashes.parenthetical_spacing == "spaced"
+
+    def replace(match: re.Match[str]) -> str:
+        whole: str = match.group(0)
+        before = _neighbour(text, match.start() - 1, -1)
+        after = _neighbour(text, match.end(), 1)
+        if before == "" or after == "":
+            return whole  # run boundary: leave dialogue/list dashes alone
+        if before in _DASHES or after in _DASHES:
+            return whole  # part of a dash run, not a clean parenthetical
+        if before.isdigit() and after.isdigit():
+            return whole  # numeric range
+        if spaced:
+            return chars.NO_BREAK_SPACE + glyph + " "
+        return glyph
+
+    result: str = _PARENTHETICAL_DASH.sub(replace, text)
+    return result

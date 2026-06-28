@@ -3,6 +3,7 @@ inherits = "en"
 
 [quotes]
 punctuation = "logical" # period/comma stays outside the closing quote
+outer = "single"        # top-level quotation uses single marks (for --normalize-quotes)
 
 [dashes]
 double_hyphen = "–" # `--` -> en dash

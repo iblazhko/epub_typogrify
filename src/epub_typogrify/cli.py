@@ -25,6 +25,13 @@ class _Stats:
     skipped: int = 0
 
 
+@dataclass(frozen=True)
+class _Options:
+    default_lang: str | None
+    normalize_dashes: bool
+    normalize_quotes: bool
+
+
 @click.command(context_settings={"help_option_names": ["-h", "--help"]})
 @click.argument(
     "targets",
@@ -43,22 +50,44 @@ class _Stats:
 )
 @click.option("--dry-run", is_flag=True, help="Report changes; write nothing.")
 @click.option("-v", "--verbose", is_flag=True, help="Per-file reporting.")
-def main(targets: tuple[Path, ...], default_lang: str | None, dry_run: bool, verbose: bool) -> None:
+@click.option(
+    "--normalize-dashes",
+    "normalize_dashes",
+    is_flag=True,
+    help="Also rewrite existing parenthetical em/en dashes to the locale convention "
+    "(e.g. spaced en dashes for en-GB). Off by default.",
+)
+@click.option(
+    "--normalize-quotes",
+    "normalize_quotes",
+    is_flag=True,
+    help="Also reflow quotation marks (straight or curly) to the locale's nesting "
+    "convention (e.g. single-outer for en-GB). Off by default.",
+)
+def main(
+    targets: tuple[Path, ...],
+    default_lang: str | None,
+    dry_run: bool,
+    verbose: bool,
+    normalize_dashes: bool,
+    normalize_quotes: bool,
+) -> None:
     """Apply language-aware typographic conversions to EPUB source files."""
     registry = LocaleRegistry.default()
+    options = _Options(default_lang, normalize_dashes, normalize_quotes)
     stats = _Stats()
     for target in targets:
         if target.is_dir():
-            _process_directory(target, registry, default_lang, dry_run, verbose, stats)
+            _process_directory(target, registry, options, dry_run, verbose, stats)
         else:
-            _process_loose_file(target, registry, default_lang, dry_run, verbose, stats)
+            _process_loose_file(target, registry, options, dry_run, verbose, stats)
     _report_summary(stats, dry_run)
 
 
 def _process_directory(
     directory: Path,
     registry: LocaleRegistry,
-    default_lang: str | None,
+    options: _Options,
     dry_run: bool,
     verbose: bool,
     stats: _Stats,
@@ -82,7 +111,9 @@ def _process_directory(
             document,
             registry,
             publication_lang=project.publication_language,
-            default_lang=default_lang,
+            default_lang=options.default_lang,
+            normalize_dashes=options.normalize_dashes,
+            normalize_quotes=options.normalize_quotes,
         )
         _finish(document, doc_path, data, label, dry_run, verbose, stats)
 
@@ -90,7 +121,7 @@ def _process_directory(
 def _process_loose_file(
     path: Path,
     registry: LocaleRegistry,
-    default_lang: str | None,
+    options: _Options,
     dry_run: bool,
     verbose: bool,
     stats: _Stats,
@@ -104,7 +135,14 @@ def _process_loose_file(
         )
     data = path.read_bytes()
     document = XhtmlDocument.from_bytes(data)
-    typogrify_document(document, registry, publication_lang=None, default_lang=default_lang)
+    typogrify_document(
+        document,
+        registry,
+        publication_lang=None,
+        default_lang=options.default_lang,
+        normalize_dashes=options.normalize_dashes,
+        normalize_quotes=options.normalize_quotes,
+    )
     _finish(document, path, data, path, dry_run, verbose, stats)
 
 

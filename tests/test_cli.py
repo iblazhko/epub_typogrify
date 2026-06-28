@@ -6,6 +6,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
+from epub_typogrify import chars
 from epub_typogrify.cli import main
 from tests.epubs import make_project
 
@@ -70,3 +71,51 @@ def test_loose_file_unresolved_is_unchanged(tmp_path: Path) -> None:
 def test_missing_target_errors() -> None:
     result = CliRunner().invoke(main, ["does-not-exist.xhtml"])
     assert result.exit_code != 0
+
+
+def test_normalize_dashes_flag(tmp_path: Path) -> None:
+    em = chars.EM_DASH
+    en = chars.EN_DASH
+    nbsp = chars.NO_BREAK_SPACE
+    file = tmp_path / "gb.xhtml"
+    file.write_text(
+        '<?xml version="1.0" encoding="utf-8"?>\n'
+        '<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-GB">'
+        f"<body><p>the cat{em}black{em}ran</p></body></html>",
+        encoding="utf-8",
+    )
+    # Without the flag the em dashes are kept (no en dash appears).
+    CliRunner().invoke(main, [str(file)])
+    assert en not in file.read_text(encoding="utf-8")
+    # With the flag they become spaced en dashes (nbsp before, regular space after).
+    result = CliRunner().invoke(main, ["--normalize-dashes", str(file)])
+    assert result.exit_code == 0, result.output
+    assert f"cat{nbsp}{en} black{nbsp}{en} ran" in file.read_text(encoding="utf-8")
+
+
+def test_normalize_quotes_flag(tmp_path: Path) -> None:
+    ldq = chars.LEFT_DOUBLE_QUOTE
+    lsq = chars.LEFT_SINGLE_QUOTE
+    rsq = chars.RIGHT_SINGLE_QUOTE
+    file = tmp_path / "gb.xhtml"
+    file.write_text(
+        '<?xml version="1.0" encoding="utf-8"?>\n'
+        '<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-GB">'
+        '<body><p>He said "stop" at once.</p></body></html>',
+        encoding="utf-8",
+    )
+    # Default: double-outer (character-based).
+    CliRunner().invoke(main, [str(file)])
+    assert ldq in file.read_text(encoding="utf-8")
+    # With the flag: reflowed to British single-outer nesting.
+    file.write_text(
+        '<?xml version="1.0" encoding="utf-8"?>\n'
+        '<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-GB">'
+        '<body><p>He said "stop" at once.</p></body></html>',
+        encoding="utf-8",
+    )
+    result = CliRunner().invoke(main, ["--normalize-quotes", str(file)])
+    assert result.exit_code == 0, result.output
+    text = file.read_text(encoding="utf-8")
+    assert f"{lsq}stop{rsq}" in text
+    assert ldq not in text

@@ -19,10 +19,17 @@ def typogrify_document(
     *,
     publication_lang: str | None = None,
     default_lang: str | None = None,
+    normalize_dashes: bool = False,
+    normalize_quotes: bool = False,
 ) -> None:
     """Apply typographic conversions to *document* in place."""
     resolver = LanguageResolver(publication_lang=publication_lang, default_lang=default_lang)
-    TextWalker(registry, resolver).process(document.root)
+    TextWalker(
+        registry,
+        resolver,
+        normalize_dashes=normalize_dashes,
+        normalize_quotes=normalize_quotes,
+    ).process(document.root)
 
 
 def typogrify_bytes(
@@ -31,6 +38,8 @@ def typogrify_bytes(
     *,
     publication_lang: str | None = None,
     default_lang: str | None = None,
+    normalize_dashes: bool = False,
+    normalize_quotes: bool = False,
 ) -> bytes:
     """Convert the text content of an XHTML document given as bytes."""
     document = XhtmlDocument.from_bytes(data)
@@ -39,5 +48,7 @@ def typogrify_bytes(
         registry or LocaleRegistry.default(),
         publication_lang=publication_lang,
         default_lang=default_lang,
+        normalize_dashes=normalize_dashes,
+        normalize_quotes=normalize_quotes,
     )
     return document.to_bytes()

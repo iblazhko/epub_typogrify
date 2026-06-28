@@ -26,17 +26,10 @@ def test_english_hooks_apply_to_en_and_en_gb() -> None:
     assert hooks_for("fr") != en_hooks
 
 
-@pytest.mark.parametrize(
-    ("text", "expected"),
-    [
-        (f"{LSQ}tis the season", f"{RSQ}tis the season"),
-        (f"{LSQ}Twas brillig", f"{RSQ}Twas brillig"),
-        (f"rock {LSQ}n{RSQ} roll", f"rock {RSQ}n{RSQ} roll"),
-        (f"M{RSQ}Donald", "McDonald"),
-    ],
-)
-def test_english_contractions(en: LocaleProfile, text: str, expected: str) -> None:
-    assert english_contractions(text, en, ContextState()) == expected
+def test_english_contractions(en: LocaleProfile) -> None:
+    # Leading elisions (’tis etc.) are handled by the quote engine now; the hook
+    # only fixes the Scottish/Irish M' prefix.
+    assert english_contractions(f"M{RSQ}Donald", en, ContextState()) == "McDonald"
 
 
 @pytest.mark.parametrize(

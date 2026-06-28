@@ -78,11 +78,15 @@ class TextWalker:
         *,
         protected_tags: frozenset[str] = PROTECTED_TAGS,
         block_tags: frozenset[str] = BLOCK_TAGS,
+        normalize_dashes: bool = False,
+        normalize_quotes: bool = False,
     ) -> None:
         self._registry = registry
         self._resolver = resolver
         self._protected = protected_tags
         self._block = block_tags
+        self._normalize_dashes = normalize_dashes
+        self._normalize_quotes = normalize_quotes
         self._pipelines: dict[str, Pipeline] = {}
 
     def process(self, root: etree._Element) -> None:
@@ -118,7 +122,11 @@ class TextWalker:
     def _pipeline_for(self, profile: LocaleProfile) -> Pipeline:
         pipeline = self._pipelines.get(profile.tag)
         if pipeline is None:
-            pipeline = build_pipeline(profile)
+            pipeline = build_pipeline(
+                profile,
+                normalize_dashes=self._normalize_dashes,
+                normalize_quotes=self._normalize_quotes,
+            )
             self._pipelines[profile.tag] = pipeline
         return pipeline
 

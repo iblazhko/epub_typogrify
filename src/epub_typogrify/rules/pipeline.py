@@ -13,11 +13,11 @@ from dataclasses import dataclass
 from epub_typogrify.locales.hooks import hooks_for
 from epub_typogrify.locales.profile import LocaleProfile
 from epub_typogrify.rules.context import ContextState, Rule
-from epub_typogrify.rules.dashes import dash_rule
+from epub_typogrify.rules.dashes import dash_rule, normalize_parenthetical_dashes
 from epub_typogrify.rules.ellipsis import ellipsis_rule
 from epub_typogrify.rules.fractions import fractions_rule
 from epub_typogrify.rules.punctuation import punctuation_placement_rule
-from epub_typogrify.rules.quotes import smart_quotes_rule
+from epub_typogrify.rules.quotes import normalize_quotes_rule, smart_quotes_rule
 from epub_typogrify.rules.spacing import (
     collapse_whitespace,
     nonbreaking_abbreviations,
@@ -52,12 +52,25 @@ class Pipeline:
         return text
 
 
-def build_pipeline(profile: LocaleProfile, *, quotes: bool = True) -> Pipeline:
-    """Assemble the pipeline for *profile* in canonical order (TechnicalDesign §6c)."""
+def build_pipeline(
+    profile: LocaleProfile,
+    *,
+    quotes: bool = True,
+    normalize_dashes: bool = False,
+    normalize_quotes: bool = False,
+) -> Pipeline:
+    """Assemble the pipeline for *profile* in canonical order (TechnicalDesign §6c).
+
+    ``normalize_dashes`` (opt-in) rewrites existing parenthetical em/en dashes to
+    the locale convention (§2.2). ``normalize_quotes`` (opt-in) reflows quotation
+    marks — straight or curly — to the locale's nesting convention (§2.7).
+    """
     rules: list[Rule] = [pre_normalise_rule]
     if quotes:
-        rules.append(smart_quotes_rule)
+        rules.append(normalize_quotes_rule if normalize_quotes else smart_quotes_rule)
     rules.append(dash_rule)
+    if normalize_dashes:
+        rules.append(normalize_parenthetical_dashes)
     rules.append(ellipsis_rule)
     if profile.fractions_enabled:
         rules.append(fractions_rule)

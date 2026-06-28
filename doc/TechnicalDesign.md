@@ -229,12 +229,14 @@ patterns = [
 # locales/en.toml  —  American English (the default for a bare `en` tag)
 inherits = "default"
 
-# `"` → double, `'` → single (character-based; nesting is not reflowed).
+# `"` → double, `'` → single by default (character-based). `outer` is used only
+# by the opt-in nesting normalisation (§2.7) to pick the top-level mark.
 [quotes]
 double = { open = "“", close = "”" }      # straight `"` becomes these
 single = { open = "‘", close = "’" }      # straight `'` becomes these
 apostrophe = "’"
 punctuation = "typesetters"               # commas/periods go INSIDE the quotes
+outer = "double"                          # top-level quotation is double (for --normalize-quotes)
 
 [dashes]
 double_hyphen = "—"       # `--` → em dash (US parenthetical convention)
@@ -255,12 +257,13 @@ nonbreaking = ["Mr.", "Mrs.", "Ms.", "Dr.", "St.", "No.", "vol.", "p."]
 inherits = "en"
 
 # British English uses the SAME Unicode quote marks as American English
-# (“ ” / ‘ ’), so no `double`/`single` override is needed — the British
-# single-as-primary convention is realised by the author using `'` for outer
-# quotations, which the character-based engine renders faithfully. Only the
-# punctuation-placement convention differs:
+# (“ ” / ‘ ’), so no `double`/`single` override is needed — by default the
+# British single-as-outer convention is realised by the author using `'` for
+# outer quotations, which the character-based engine renders faithfully. The
+# `outer = "single"` setting drives the opt-in nesting normalisation (§2.7).
 [quotes]
 punctuation = "logical"                   # punctuation INSIDE only if part of the quote
+outer = "single"                          # top-level quotation is single (for --normalize-quotes)
 
 [dashes]
 double_hyphen = "–"            # `--` → en dash (British parenthetical convention)
@@ -332,8 +335,8 @@ Two things are deliberately **not** hooks:
 Order matters; the pipeline runs per text-run as:
 
 1. **Pre-normalisation** — Gutenberg backtick→apostrophe, optional whitespace collapse.
-2. **Smart quotes & apostrophes** — context-aware, using profile quote chars + the cross-node `ContextState`.
-3. **Dashes & hyphens** — `--`/`---`, numeric & roman ranges, true minus `−`.
+2. **Smart quotes & apostrophes** — context-aware, using profile quote chars + the cross-node `ContextState`. **Opt-in** (`--normalize-quotes`), this instead reflows quotes (straight *or* curly) to the locale's nesting convention by depth (§2.7).
+3. **Dashes & hyphens** — `--`/`---`, numeric & roman ranges, true minus `−`; then, **opt-in** (`--normalize-dashes`), rewrite existing parenthetical dashes to the locale convention (§2.2).
 4. **Ellipsis** — spaced dots → `…`, spacing around it.
 5. **Fractions** (where enabled) — `1/2 → ½`, etc.
 6. **Non-breaking spacing** — abbreviations, units/numbers, word joiners before em dash; then **punctuation placement** (profile-driven, §6b).

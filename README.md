@@ -46,6 +46,8 @@ so run it from a clean version-control state and review the diff.
 | Option | Description |
 |---|---|
 | `-l`, `--default-lang TAG` | Fallback language (BCP-47, e.g. `en`, `en-GB`, `fr`) for text that declares none. If omitted, text with no resolvable language is left unchanged — no default is assumed. |
+| `--normalize-dashes` | Also rewrite existing parenthetical em/en dashes to the locale convention (e.g. closed em dashes for `en`, spaced en dashes for `en-GB`). Off by default — it rewrites authorial dash choices, so it is opt-in. |
+| `--normalize-quotes` | Also reflow quotation marks (straight *or* curly, in any combination) to the locale's nesting convention — double-outer for `en`, single-outer for `en-GB`. Off by default (same opt-in rationale). |
 | `--dry-run` | Report what would change; write nothing. |
 | `-v`, `--verbose` | Per-file reporting (`conv` changed, `skip` ignored section, `--` unchanged). |
 | `-h`, `--help` | Show help and exit. |
@@ -79,6 +81,10 @@ epub_typogrify --dry-run -v path/to/book/
 
 # Process loose files, supplying a language for otherwise-undeclared text.
 epub_typogrify --default-lang en src/chapter-1.xhtml src/chapter-2.xhtml
+
+# Also normalise existing em dashes to the locale convention (e.g. a British
+# book that uses closed em dashes -> spaced en dashes).
+epub_typogrify --normalize-dashes path/to/book/
 ```
 
 The full catalogue of conversions is in
