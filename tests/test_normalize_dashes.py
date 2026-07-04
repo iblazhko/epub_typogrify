@@ -78,6 +78,34 @@ def test_flag_off_does_not_normalize() -> None:
     assert build_pipeline(_GB).run(f"cat{EM}black") == f"cat{WJ}{EM}black"
 
 
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("big question - whether", f"big question{NBSP}{EN} whether"),
+        ("a - b - c", f"a{NBSP}{EN} b{NBSP}{EN} c"),
+        ("question -  whether", f"question{NBSP}{EN} whether"),  # extra space collapsed too
+    ],
+)
+def test_en_gb_spaced_ascii_hyphen(text: str, expected: str) -> None:
+    assert _gb(text) == expected
+
+
+def test_en_us_closed_ascii_hyphen() -> None:
+    assert _us("big question - whether") == f"big question{WJ}{EM}whether"
+
+
+def test_ascii_hyphen_left_alone_when_not_a_clean_parenthetical() -> None:
+    assert _gb("well-known author") == "well-known author"  # hyphenated compound
+    assert _gb("well -known") == "well -known"  # space on one side only
+    assert _gb("well- known") == "well- known"  # space on one side only
+    assert _gb("1914 - 1918") == "1914 - 1918"  # numeric range, left alone
+    assert _gb("we gotta -") == "we gotta -"  # no trailing space: not recognised
+
+
+def test_flag_off_does_not_normalize_ascii_hyphen() -> None:
+    assert build_pipeline(_GB).run("big question - whether") == "big question - whether"
+
+
 @settings(max_examples=300)
 @given(st.text(alphabet=st.sampled_from(list("ab 12-" + EM + EN + NBSP + WJ)), max_size=40))
 def test_normalize_is_idempotent(text: str) -> None:

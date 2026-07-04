@@ -45,10 +45,18 @@ def dash_rule(text: str, profile: LocaleProfile, ctx: ContextState) -> str:
 
 # A single em/en dash with any surrounding spacing — and an absorbed word joiner,
 # which a later stage may have inserted before an em dash on a previous run (so it
-# is not left orphaned, and the rule stays idempotent).
+# is not left orphaned, and the rule stays idempotent) — or a lone ASCII hyphen
+# with plain space(s) on both sides, the shorthand some authors use for a
+# parenthetical dash in place of "--"/an em dash. Requiring the spaces (not just
+# any affix) keeps a hyphenated compound (``well-known``) untouched, and the
+# ``(?<!-)``/``(?!-)`` guards keep a longer hyphen run from matching. Consuming
+# the spaces as part of the match (rather than a zero-width lookaround) matters
+# for idempotency: it stops the alternative from starting mid-match on a space
+# an earlier em/en-dash match already consumed on a previous pass.
 _AFFIX = " " + chars.NO_BREAK_SPACE + chars.NARROW_NO_BREAK_SPACE + chars.WORD_JOINER
 _PARENTHETICAL_DASH = re.compile(
     "[" + _AFFIX + "]*([" + chars.EM_DASH + chars.EN_DASH + "])[" + _AFFIX + "]*"
+    r"| +(?<!-)-(?!-) +"
 )
 _TRANSPARENT = frozenset(_AFFIX)
 _DASHES = frozenset(chars.EM_DASH + chars.EN_DASH)
@@ -79,6 +87,11 @@ def normalize_parenthetical_dashes(text: str, profile: LocaleProfile, ctx: Conte
     numeric ranges (digits on both sides), the two-/three-em ligatures, a dash with
     *no* preceding word (a block-start dialogue/list dash), and a dash whose
     neighbour is itself a dash (a dash *run*).
+
+    Also recognises a lone ASCII hyphen flanked by whitespace (``big question -
+    whether``) — a common substitute for ``--``/an em dash — and folds it into the
+    same treatment. A hyphenated compound (``well-known``) is unaffected, since
+    that has no whitespace on either side.
     """
     glyph = profile.dashes.double_hyphen
     spaced = profile.dashes.parenthetical_spacing == "spaced"

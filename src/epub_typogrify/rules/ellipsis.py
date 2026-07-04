@@ -13,9 +13,21 @@ from epub_typogrify import chars
 from epub_typogrify.locales.profile import LocaleProfile
 from epub_typogrify.rules.context import ContextState
 
-# Three dots, optionally separated by horizontal whitespace, not part of a longer
-# run of dots. ``(?<!\.)``/``(?!\.)`` keep us from biting into four-or-more dots.
-_SPACED_DOTS = re.compile(r"(?<!\.)\.[ \t]*\.[ \t]*\.(?!\.)")
+# Three dots, optionally separated by horizontal whitespace — including the
+# non-breaking/narrow/punctuation/hair spaces a word processor or an earlier
+# conversion pass may have already inserted between them, not just a plain
+# space/tab — and not part of a longer run of dots. ``(?<!\.)``/``(?!\.)`` keep
+# us from biting into four-or-more dots.
+_DOT_SPACE = (
+    " \t"
+    + chars.NO_BREAK_SPACE
+    + chars.NARROW_NO_BREAK_SPACE
+    + chars.PUNCTUATION_SPACE
+    + chars.HAIR_SPACE
+)
+_SPACED_DOTS = re.compile(
+    r"(?<!\.)\.[" + _DOT_SPACE + r"]*\.[" + _DOT_SPACE + r"]*\.(?!\.)"
+)
 
 
 def ellipsis_rule(text: str, profile: LocaleProfile, ctx: ContextState) -> str:
