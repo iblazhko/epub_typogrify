@@ -9,6 +9,8 @@ punctuation = "logical"                # no typesetters' relocation
 
 [dashes]
 double_hyphen = "—"   # em dash for dialogue
+# interrupted_dialogue is deliberately left unset: French marks an interruption
+# with an ellipsis, not a dash [IN] — out of scope for the dash rule.
 
 [spaces]
 before_high_punctuation = true   # narrow nbsp before ; : ! ?

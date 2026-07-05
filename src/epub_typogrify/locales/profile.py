@@ -60,12 +60,22 @@ class Quotes:
 class Dashes:
     """Dash conventions. ``double_hyphen``/``triple_hyphen`` are what ``--``/``---``
     become; ``numeric_range`` is the range dash; ``parenthetical_spacing`` is
-    ``"closed"`` or ``"spaced"`` (consumed by Phase 2 spacing)."""
+    ``"closed"`` or ``"spaced"`` (consumed by Phase 2 spacing).
+
+    ``interrupted_dialogue`` is the glyph for a dash ending a run of dialogue
+    (interrupted speech, TypographyConversions.md §2.2) — always closed (no space
+    either side), independent of ``parenthetical_spacing``, per ``[CMOS ch.6]``/
+    ``[NHR ch.4]``/``[DUDEN]``: unlike the ordinary parenthetical dash, sources
+    agree this one dash convention (as opposed to ellipsis) does not vary with a
+    locale's usual dash spacing. ``None`` means the locale doesn't use a dash for
+    this at all (French marks interruption with an ellipsis instead, `[IN]`), so
+    the rule is skipped rather than guessing a convention with no source."""
 
     double_hyphen: str = chars.EM_DASH
     triple_hyphen: str = chars.EM_DASH
     numeric_range: str = chars.EN_DASH
     parenthetical_spacing: str = "closed"
+    interrupted_dialogue: str | None = None
 
 
 @dataclass(frozen=True)
@@ -142,6 +152,7 @@ def _dashes_from_dict(data: Mapping[str, Any]) -> Dashes:
         triple_hyphen=data.get("triple_hyphen", chars.EM_DASH),
         numeric_range=data.get("numeric_range", chars.EN_DASH),
         parenthetical_spacing=data.get("parenthetical_spacing", "closed"),
+        interrupted_dialogue=data.get("interrupted_dialogue"),
     )
 
 

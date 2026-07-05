@@ -28,12 +28,17 @@ class ContextState:
     pipeline) and left untouched, so a later rule can still see the character that
     preceded the run — e.g. the word in the previous inline node across a markup
     boundary. ``quote_stack`` records the kinds of quotation marks currently open
-    (``'"'`` or ``"'"``) to track nesting depth.
+    (``'"'`` or ``"'"``) to track nesting depth. ``run_is_block_final`` tells a
+    rule whether this run is the last text before its enclosing block closes (set
+    by the ``TextWalker``, which alone can see across markup boundaries); it
+    defaults to ``True`` so a rule used outside the walker (as in most unit tests,
+    on an isolated string) sees a run as inherently final.
     """
 
     prev_char: str | None = None
     run_prev_char: str | None = None
     quote_stack: list[str] = field(default_factory=list)
+    run_is_block_final: bool = True
 
 
 # A rule maps text to text given the active locale profile and the running state.

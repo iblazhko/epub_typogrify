@@ -109,9 +109,57 @@ nesting convention.
 The table above describes what the author shorthand `--`/`---` becomes. An
 **existing** em/en dash is left as the author wrote it by default.
 
+**Always on: a dash ending a run of dialogue (interrupted speech).** This is a
+**separate, universal convention** from the ordinary parenthetical dash above —
+not a locale variant of it — so it applies regardless of `--normalize-dashes`,
+and it does not necessarily use the locale's `double_hyphen`/`parenthetical_spacing`:
+
+| Locale | Glyph | Spacing | Source |
+|---|---|---|---|
+| `en` (US) | `—` (em) | closed | `[CMOS ch.6]` |
+| `en-GB` | `—` (em) — **not** its own `–` | closed | `[NHR ch.4]` (per UK fiction-editing practice; both English variants agree) |
+| `de` | `–` (en, its own Gedankenstrich) | closed | `[DUDEN]` |
+| `fr` | — (not applicable) | — | `[IN]` (marks interruption with `…` instead; see below) |
+
+Every reference that uses a dash for this (both English variants, and German)
+agrees it is **closed** — no space before the preceding word, none after,
+whether the run ends right there or a closing quote/other punctuation follows —
+even where that locale's *ordinary* parenthetical dash is spaced. `en-GB`'s
+interruption dash is the **em** dash, not the en dash its own `double_hyphen`
+otherwise produces: British fiction-editing practice treats this as one dash
+convention shared with American English, distinct from the (British-only)
+spaced-en-dash parenthetical style. `de` keeps its own Gedankenstrich glyph (en
+dash) but drops the spacing Duden otherwise gives it, per Duden's own example of
+an interruption: „Könntest du mir bitte –".
+
+| Input | `en`/`en-GB` output | `de` output |
+|---|---|---|
+| `what if --` | `what if⁤—` | — |
+| `what if -- ` (trailing space) | `what if⁤—` | — |
+| `<em>what if -- </em>` | `what if⁤—</em>` | — |
+| `what if --'` | `what if⁤—'` | — |
+| `was ich -- ` | — | `was ich⁤–` |
+
+A dash with **no preceding word** (a block-start dialogue/list dash, e.g.
+`– Yes`) is left alone, as is a dash whose run only *looks* final because an
+inline element follows with more sentence content (`this is it -- <em>business
+as usual</em>` is mid-sentence, not paragraph-final, and gets only the ordinary
+`--` conversion above, untouched otherwise) — resolved across inline-markup
+boundaries the same way §2.2's opt-in normalisation is (below).
+
+**Not applicable to French.** `[IN]`-governed French marks an interruption with
+points de suspension (`…`, always three dots — the same mark used for a
+trailing-off sentence), not a dash; the tiret in French dialogue marks a
+*change of speaker*, not a mid-sentence cutoff. `fr`'s `interrupted_dialogue` is
+therefore unset, and `--` there gets only the ordinary (agnostic) conversion
+above, spacing as authored — this is out of scope rather than a guessed
+convention.
+
 **Opt-in: normalise existing parenthetical dashes** (`--normalize-dashes`). When
-enabled, an already-typed parenthetical em/en dash is rewritten to the locale's
-convention — glyph from `double_hyphen`, spacing from `parenthetical_spacing`:
+enabled, an already-typed parenthetical em/en dash — anywhere **except** a
+trailing/interrupted-dialogue dash, which the always-on rule above already
+handles — is rewritten to the locale's convention — glyph from `double_hyphen`,
+spacing from `parenthetical_spacing`:
 
 | Locale | Input | Output |
 |---|---|---|
@@ -119,17 +167,14 @@ convention — glyph from `double_hyphen`, spacing from `parenthetical_spacing`:
 | `en` (US) | `cat – black` | `cat—black` (closed em) |
 
 This rewrites authorial choices, so it is off by default. The spaced form uses a
-non-breaking space before the dash so it cannot begin a line. A dash is bound to
-its preceding word whenever it has one — **including a trailing dash at the end
-of a paragraph** (interrupted speech), which keeps the non-breaking space but no
-following space: `we gotta␣ₙ–`. Left untouched: numeric ranges (`1914–1918`),
-the two-/three-em ligatures, dash *runs*, and a dash with **no preceding word**
-(a block-start dialogue/list dash, e.g. `– Yes`).
+non-breaking space before the dash so it cannot begin a line. Left untouched:
+numeric ranges (`1914–1918`), the two-/three-em ligatures, dash *runs*, and a
+dash with **no preceding word** (a block-start dialogue/list dash).
 
 The normalisation works **across inline-markup boundaries**: a dash adjacent to
 an element (its word in a neighbouring node) is still bound, e.g. both
 `<em>this is it</em> – business` and `this is it – <em>business</em>` become
-`…it␣ₙ– business…`, and `we <em>gotta</em> –` becomes `we gotta␣ₙ–`.
+`…it␣ₙ– business…`.
 
 ### 2.3 Non-breaking spaces (keep-together)
 

@@ -13,7 +13,11 @@ from dataclasses import dataclass
 from epub_typogrify.locales.hooks import hooks_for
 from epub_typogrify.locales.profile import LocaleProfile
 from epub_typogrify.rules.context import ContextState, Rule
-from epub_typogrify.rules.dashes import dash_rule, normalize_parenthetical_dashes
+from epub_typogrify.rules.dashes import (
+    bind_interrupted_dialogue_dash,
+    dash_rule,
+    normalize_parenthetical_dashes,
+)
 from epub_typogrify.rules.ellipsis import ellipsis_rule, ellipsis_spacing_rule
 from epub_typogrify.rules.fractions import fractions_rule
 from epub_typogrify.rules.punctuation import punctuation_placement_rule
@@ -84,6 +88,11 @@ def build_pipeline(
     rules.append(dash_rule)
     if normalize_dashes:
         rules.append(normalize_parenthetical_dashes)
+    if profile.dashes.interrupted_dialogue is not None:
+        # Always on where the locale has this convention at all (not gated by
+        # normalize_dashes): a dash ending a run of dialogue is unambiguous,
+        # unlike the opt-in rewrite of a mid-sentence parenthetical dash above.
+        rules.append(bind_interrupted_dialogue_dash)
     rules.append(ellipsis_rule)
     if profile.fractions_enabled:
         rules.append(fractions_rule)

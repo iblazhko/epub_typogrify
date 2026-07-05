@@ -10,3 +10,7 @@ punctuation = "logical"
 
 [dashes]
 double_hyphen = "–"   # Halbgeviertstrich (en dash)
+# Interrupted dialogue: same glyph as the ordinary dash, but always closed
+# (no space either side), e.g. Duden's own example „Könntest du mir bitte –" —
+# unlike English, German doesn't switch glyphs for this, just the spacing.
+interrupted_dialogue = "–"

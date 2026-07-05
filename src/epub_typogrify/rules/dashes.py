@@ -46,20 +46,28 @@ def dash_rule(text: str, profile: LocaleProfile, ctx: ContextState) -> str:
 # A single em/en dash with any surrounding spacing — and an absorbed word joiner,
 # which a later stage may have inserted before an em dash on a previous run (so it
 # is not left orphaned, and the rule stays idempotent) — or a lone ASCII hyphen
-# with plain space(s) on both sides, the shorthand some authors use for a
-# parenthetical dash in place of "--"/an em dash. Requiring the spaces (not just
-# any affix) keeps a hyphenated compound (``well-known``) untouched, and the
+# with the same affix spacing on both sides, the shorthand some authors use for a
+# parenthetical dash in place of "--"/an em dash. Requiring the affix (not just
+# any character) keeps a hyphenated compound (``well-known``) untouched, and the
 # ``(?<!-)``/``(?!-)`` guards keep a longer hyphen run from matching. Consuming
-# the spaces as part of the match (rather than a zero-width lookaround) matters
-# for idempotency: it stops the alternative from starting mid-match on a space
-# an earlier em/en-dash match already consumed on a previous pass.
+# the affix as part of the match (rather than a zero-width lookaround) matters for
+# idempotency: it stops an alternative from starting mid-match on affix an earlier
+# pass already inserted — and both arms must consume the *same* affix set (word
+# joiner included), or one pass strands a word joiner next to the rewritten dash
+# for a second pass to swallow and discard: same text, a different number of
+# passes to reach the fixed point.
 _AFFIX = " " + chars.NO_BREAK_SPACE + chars.NARROW_NO_BREAK_SPACE + chars.WORD_JOINER
 _PARENTHETICAL_DASH = re.compile(
     "[" + _AFFIX + "]*([" + chars.EM_DASH + chars.EN_DASH + "])[" + _AFFIX + "]*"
-    r"| +(?<!-)-(?!-) +"
+    "|[" + _AFFIX + r"]+(?<!-)-(?!-)[" + _AFFIX + "]+"
 )
 _TRANSPARENT = frozenset(_AFFIX)
-_DASHES = frozenset(chars.EM_DASH + chars.EN_DASH)
+# Dash-like characters a neighbour check must not treat as ordinary content: the
+# two single dashes this rule rewrites, plus the two-/three-em ligatures it
+# leaves alone — the ligature is never affix, so a neighbouring word joiner
+# resolves *past* it to whatever word joiner previously protected it against,
+# which must still be recognised as "a dash sits here", not a letter.
+_DASHES = frozenset(chars.EM_DASH + chars.EN_DASH + chars.TWO_EM_DASH + chars.THREE_EM_DASH)
 
 
 def _neighbour(text: str, index: int, step: int) -> str:
@@ -126,4 +134,73 @@ def normalize_parenthetical_dashes(text: str, profile: LocaleProfile, ctx: Conte
         return glyph
 
     result: str = _PARENTHETICAL_DASH.sub(replace, text)
+    return result
+
+
+# --- Interrupted dialogue: a dash that ends a run of speech -------------------
+
+# Trailing punctuation after the dash (a closing quote ending the dialogue, most
+# commonly) — anything that isn't a word character, whitespace, a dash (single or
+# the two-/three-em ligatures — a ligature right after our dash is a dash run,
+# not punctuation to touch), or the word joiner (an invisible formatting
+# character, already claimed by the gap above as ordinary affix).
+_TRAILING_PUNCT = (
+    r"[^\w\s"
+    + chars.EM_DASH
+    + chars.EN_DASH
+    + chars.TWO_EM_DASH
+    + chars.THREE_EM_DASH
+    + chars.WORD_JOINER
+    + r"]*"
+)
+_TRAILING_DIALOGUE_DASH = re.compile(
+    "[" + _AFFIX + "]*([" + chars.EM_DASH + chars.EN_DASH + "])"
+    "[" + _AFFIX + "]*(" + _TRAILING_PUNCT + ")$"
+)
+
+
+def bind_interrupted_dialogue_dash(text: str, profile: LocaleProfile, ctx: ContextState) -> str:
+    """Bind a dash ending a run of dialogue (interrupted speech) to its preceding
+    word — always on, independent of ``--normalize-dashes`` (TypographyConversions.md
+    §2.2): a dash at the very end of a run — a paragraph, or an inline element with
+    nothing left in it — is unambiguously the interrupted-speech marker, not a
+    stylistic dash choice under review. A no-op where the locale has no such
+    convention (``profile.dashes.interrupted_dialogue`` is ``None`` — French marks
+    this with an ellipsis instead, so the rule is absent from its pipeline).
+
+    Per ``[CMOS ch.6]``/``[NHR ch.4]``/``[DUDEN]``, this dash is always **closed**
+    — no space before the preceding word (protected from wrapping by a word
+    joiner instead), none after, whether the run ends right there or a closing
+    quote follows — regardless of the locale's ordinary ``parenthetical_spacing``
+    (British prose is spaced for an aside but still closes up an interruption).
+    The glyph is ``dashes.interrupted_dialogue``, which need not match
+    ``double_hyphen``: English always uses the em dash here even where its
+    general parenthetical dash is an en dash (``en-GB``).
+
+    Only a dash that is the *last* thing in its **block** counts
+    (``ctx.run_is_block_final``, set by the ``TextWalker`` — a run ending merely
+    because an inline element follows, e.g. ``it – <em>business</em>``, is not
+    this) — optionally followed by trailing punctuation but no further word
+    content — and only when it has a preceding word; a dash with none (a
+    block-start dialogue/list dash, e.g. ``– Yes``) is left alone, as is a dash
+    that is itself part of a dash run.
+    """
+    glyph = profile.dashes.interrupted_dialogue
+    if glyph is None:
+        return text
+
+    def replace(match: re.Match[str]) -> str:
+        if not ctx.run_is_block_final:
+            return match.group(0)  # more content follows later in the block
+        if match.start() > 0:
+            before = text[match.start() - 1]
+        else:
+            before = ctx.run_prev_char or ""
+        if not before or before in _DASHES:
+            return match.group(0)  # block-start dash, or part of a dash run
+
+        punct = match.group(2)
+        return chars.WORD_JOINER + glyph + punct
+
+    result: str = _TRAILING_DIALOGUE_DASH.sub(replace, text)
     return result

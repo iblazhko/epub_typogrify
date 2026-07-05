@@ -8,6 +8,9 @@ outer = "single"        # top-level quotation uses single marks (for --normalize
 [dashes]
 double_hyphen = "–" # `--` -> en dash
 parenthetical_spacing = "spaced"
+# interrupted_dialogue is NOT overridden here: it stays the closed em dash
+# inherited from `en` — British and American style agree on this one, even
+# though they differ on the ordinary parenthetical dash above [NHR ch.4].
 
 [abbreviations]
 # British style drops the full stop after contractions ending in the last letter.

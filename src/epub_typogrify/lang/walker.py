@@ -68,6 +68,18 @@ BLOCK_TAGS = frozenset(
 )
 
 
+def _is_last_in_block(node: etree._Element, block: etree._Element) -> bool:
+    """True if nothing (element or text) follows *node* before *block* closes."""
+    while node is not block:
+        if node.getnext() is not None:
+            return False
+        parent = node.getparent()
+        if parent is None:
+            return True
+        node = parent
+    return True
+
+
 class TextWalker:
     """Apply per-language pipelines to the text nodes of an XHTML tree."""
 
@@ -96,21 +108,28 @@ class TextWalker:
     def process(self, root: etree._Element) -> None:
         """Convert the text content of *root* in place."""
         if not self._is_protected(root):
-            self._walk(root, ContextState())
+            self._walk(root, ContextState(), root)
 
-    def _walk(self, elem: etree._Element, ctx: ContextState) -> None:
-        # Precondition: *elem* is not protected.
+    def _walk(
+        self, elem: etree._Element, ctx: ContextState, block_root: etree._Element
+    ) -> None:
+        # Precondition: *elem* is not protected. *block_root* is the nearest
+        # enclosing block element (whose boundary ``ctx`` is scoped to), so a rule
+        # can tell whether a run is genuinely the last text before the block
+        # closes, rather than merely the last text before an inline element.
         if elem.text:
+            ctx.run_is_block_final = len(elem) == 0 and _is_last_in_block(elem, block_root)
             elem.text = self._convert(elem.text, elem, ctx)
         for child in elem:
             if self._is_protected(child):
                 pass  # skip the child's text and its whole subtree
             elif self._is_block(child):
-                self._walk(child, ContextState())  # fresh state per block
+                self._walk(child, ContextState(), child)  # fresh state per block
             else:
-                self._walk(child, ctx)  # inline: thread the state
+                self._walk(child, ctx, block_root)  # inline: thread the state
             if child.tail:
                 # The tail belongs to *elem* (it follows the child within elem).
+                ctx.run_is_block_final = _is_last_in_block(child, block_root)
                 child.tail = self._convert(child.tail, elem, ctx)
 
     def _convert(self, text: str, owner: etree._Element, ctx: ContextState) -> str:

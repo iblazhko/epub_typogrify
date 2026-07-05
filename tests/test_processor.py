@@ -129,6 +129,29 @@ def test_block_start_dash_is_left_alone() -> None:
     assert NBSP not in out
 
 
+def _default(body: str) -> str:
+    source = _GB_HEADER + body + "\n</html>"
+    return typogrify_bytes(source.encode("utf-8")).decode()  # no --normalize-dashes
+
+
+def test_interrupted_dialogue_dash_before_closing_inline_element() -> None:
+    # A trailing "--" right before </em></p>: closed em dash (CMOS/NHR/Duden),
+    # regardless of --normalize-dashes (always on) and of en-GB's own spaced en
+    # dash convention for ordinary parenthetical dashes.
+    out = _default("<body><p><em>what if --</em></p></body>")
+    assert f"what if{chars.WORD_JOINER}{EM}</em>" in out
+    out = _default("<body><p><em>what if -- </em></p></body>")
+    assert f"what if{chars.WORD_JOINER}{EM}</em>" in out
+
+
+def test_interrupted_dialogue_dash_is_not_confused_by_a_following_element() -> None:
+    # A dash before <em> with more sentence content inside it is mid-sentence, not
+    # the end of the paragraph — left as the ordinary "--" conversion produced it.
+    out = _default("<body><p>this is it -- <em>business as usual</em></p></body>")
+    assert chars.WORD_JOINER not in out
+    assert f"this is it {EN} <em>" in out
+
+
 WJ = chars.WORD_JOINER
 PS = chars.PUNCTUATION_SPACE
 

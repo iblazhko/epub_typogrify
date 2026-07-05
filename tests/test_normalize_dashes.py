@@ -60,11 +60,13 @@ def test_ranges_and_dialogue_dashes_are_left_alone() -> None:
 
 
 def test_trailing_interrupted_dash_is_bound() -> None:
-    # A trailing dash (interrupted speech) has a preceding word, so it is bound
-    # with a non-breaking space — but no following space.
-    assert _gb(f"we gotta{EM}") == f"we gotta{NBSP}{EN}"
-    assert _gb("we gotta --") == f"we gotta{NBSP}{EN}"
-    assert _gb(f"we gotta {EN}") == f"we gotta{NBSP}{EN}"
+    # A trailing dash (interrupted speech) is a distinct, universal convention
+    # (CMOS/NHR/Duden) — always the closed em dash, regardless of the locale's
+    # ordinary (here, spaced en dash) parenthetical style — so the always-on
+    # interrupted-dialogue rule supersedes --normalize-dashes's own rewrite here.
+    assert _gb(f"we gotta{EM}") == f"we gotta{WJ}{EM}"
+    assert _gb("we gotta --") == f"we gotta{WJ}{EM}"
+    assert _gb(f"we gotta {EN}") == f"we gotta{WJ}{EM}"
 
 
 def test_ligatures_are_left_alone() -> None:

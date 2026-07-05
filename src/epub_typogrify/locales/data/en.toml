@@ -4,6 +4,11 @@ inherits = "default"
 # Quotes, dashes, ellipsis, fractions are all inherited from `default`
 # (American conventions). en adds non-breaking spacing.
 
+[dashes]
+# Interrupted dialogue: closed em dash, regardless of the (here, already-closed)
+# parenthetical convention — [CMOS ch.6].
+interrupted_dialogue = "—"
+
 [abbreviations]
 full_stop_after_contractions = true
 nonbreaking = ["Mr.", "Mrs.", "Ms.", "Dr.", "St.", "No.", "vol.", "p."]
