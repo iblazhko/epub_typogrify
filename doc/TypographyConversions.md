@@ -155,6 +155,43 @@ therefore unset, and `--` there gets only the ordinary (agnostic) conversion
 above, spacing as authored — this is out of scope rather than a guessed
 convention.
 
+**Not covered: resuming dialogue after intervening narration.** The always-on
+rule above only marks the *end* of an interrupted run (a dash that is the last
+thing in its block). It has no counterpart for the mirror case — narration
+sits in its own paragraph, and dialogue then *resumes* in a following
+paragraph, sometimes mid-word:
+
+```
+<p>The lowly rat has done yeoman’s service for huma---’</p>
+<p>Again, at his savage instigation, it died into silence.</p>
+<p>‘ -- nity’, Colleen said distantly…</p>
+```
+
+None of §4's references document this case. `[CMOS]` (via the Standard
+Ebooks manual, its own FAQ, and *CMOS Shop Talk*) covers only a single em dash
+marking a mid-quote interruption, and a same-paragraph narration-insertion
+pattern where the dash-narration-dash sits inside one continuous quote
+(`"Don't you dare"—Cassandra paused to glare at Ralph—"interrupt me."`) — not
+a case where the narration is its own paragraph and dialogue resumes in a
+third. `[NHR]` has no accessible full text for this; secondary sources note
+Hart's Rules doesn't even give an example for the same-paragraph
+narration-insertion case. `[DUDEN]`'s only relevant example
+(`»Sei still, du –!«, schrie er ihn wütend an.`) is likewise a single dash
+inside one unbroken quote. `[IN]` is not applicable (French uses `…`, not a
+dash, per above).
+
+Because no rule marks this case, an author's leading `--`/`---` at the start
+of a resuming paragraph currently falls through to the **ordinary** `--`
+conversion (§2.2's `double_hyphen` table) rather than the interrupted-dialogue
+one — for `en-GB` that produces a **spaced en dash**, not the closed em dash
+the interruption side uses. Whether the resumption should instead mirror the
+interruption side (closed, using `interrupted_dialogue` rather than
+`double_hyphen`) is a reasoned extrapolation from the "always closed, always
+em (or the locale's own Gedankenstrich for `de`)" principle the sources give
+for the *interruption* side — not something any cited source states for the
+*resumption* side. Left as an open question pending a decision, rather than
+implemented as a guessed convention.
+
 **Opt-in: normalise existing parenthetical dashes** (`--normalize-dashes`). When
 enabled, an already-typed parenthetical em/en dash — anywhere **except** a
 trailing/interrupted-dialogue dash, which the always-on rule above already
