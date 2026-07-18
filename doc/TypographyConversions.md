@@ -31,6 +31,8 @@ These apply to text in any language (subject to the protected-element rules).
 |---|---|---|
 | `...` | `…` (U+2026) | `[U]`, `[SEMOS §8]` |
 | `. . .` (spaced) | `…` | `[SEMOS §8]` |
+| `....` (3 ellipsis dots + sentence's own full stop) | `….` | `[SEMOS §8]` |
+| `.....` or more | left alone | — |
 
 ### 1.2 Em/En dash from hyphens
 | Input | Output | Notes | Source |
@@ -252,16 +254,19 @@ joiner (U+2060), `␣ₚ` = punctuation space (U+2008).
 |---|---|---|
 | Before | word joiner + punctuation space + word joiner | `word⁤␣ₚ⁤…` |
 | Before — exceptions | none at a block start, or directly after an opening quote | `“…` (tight) |
-| After a word | regular space | `…␣word` |
-| After — before punctuation | punctuation space | `…␣ₚ!` |
+| After a word | regular (breakable) space | `…␣word` |
+| After — before punctuation | word joiner + punctuation space + word joiner | `…⁤␣ₚ⁤!` |
 | After — before a closing quote | nothing (tight) | `…”` |
 
-The before-sandwich keeps the ellipsis a subtle, **non-breaking** punctuation space from
-the preceding word (the word joiners stop it wrapping to a new line). The "block
-start" and "opening quote" exceptions are resolved across inline-markup
-boundaries (via the cross-node preceding character), so an ellipsis at the start
-of a `<em>` tail is still bound to the word before it. Off by default; the rule
-implements the **English** convention and is independent of locale.
+The before-sandwich (and the identical after-before-punctuation sandwich) keeps the
+ellipsis a subtle, **non-breaking** gap from the preceding word / following
+punctuation — the word joiners are what make it non-breaking; a bare punctuation
+space (U+2008) is line-break class BA (breakable after), not GL, so without them
+a line could still break right there. The "block start" and "opening quote"
+exceptions are resolved across inline-markup boundaries (via the cross-node
+preceding character), so an ellipsis at the start of a `<em>` tail is still bound
+to the word before it. Off by default; the rule implements the **English**
+convention and is independent of locale.
 
 ### 2.6 Locale code-hook conversions
 
