@@ -2,7 +2,8 @@
 
 Phase 1: word joiner before em dashes (§1.6) and whitespace cleanup (§1.7).
 Phase 2: non-breaking spaces that keep paired tokens together (§2.3) —
-abbreviations bound to the following word, and units bound to a preceding number.
+abbreviations bound to the following word, units bound to a preceding number,
+and a person's initials bound to each other and to the surname that follows.
 French high-punctuation spacing (§2.4) lives in the French code hook.
 """
 
@@ -69,4 +70,24 @@ def nonbreaking_units(text: str, profile: LocaleProfile, ctx: ContextState) -> s
     nbsp = profile.spaces.nbsp
     pattern = _units_pattern(units)
     result: str = pattern.sub(lambda m: m.group(1) + nbsp + m.group(2), text)
+    return result
+
+
+# Two or more "capital letter + full stop" groups (optionally spaced, as some
+# house styles set ``J. M.`` rather than ``J.M.``), immediately followed by a
+# capitalised word — a person's initials followed by their surname. A single
+# ``[A-Z].`` is deliberately excluded: on its own it is indistinguishable from
+# a list/outline marker ("A. The first point…"), which must not be bound to
+# the sentence that follows it.
+_INITIALS = re.compile(r"\b(?:\p{Lu}\. ?){2,}(?=\p{Lu})")
+
+
+def nonbreaking_initials(text: str, profile: LocaleProfile, ctx: ContextState) -> str:
+    """Bind a run of initials to each other and to the following surname (§2.3),
+    e.g. ``J.M. Coetzee`` -> ``J.M.<nbsp>Coetzee``, ``V. S. Naipaul`` ->
+    ``V.<nbsp>S.<nbsp>Naipaul``. Locale-independent: unlike
+    `nonbreaking_abbreviations`, this is a closed-class *pattern* (any capital
+    letter), not a per-locale word list."""
+    nbsp = profile.spaces.nbsp
+    result: str = _INITIALS.sub(lambda m: m.group().replace(" ", nbsp), text)
     return result

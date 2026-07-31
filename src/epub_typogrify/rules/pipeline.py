@@ -25,6 +25,7 @@ from epub_typogrify.rules.quotes import make_quote_rule
 from epub_typogrify.rules.spacing import (
     collapse_whitespace,
     nonbreaking_abbreviations,
+    nonbreaking_initials,
     nonbreaking_units,
     word_joiner_before_em_dash,
 )
@@ -98,6 +99,7 @@ def build_pipeline(
         rules.append(fractions_rule)
     # Stage 6: non-breaking spacing.
     rules.append(nonbreaking_abbreviations)
+    rules.append(nonbreaking_initials)
     rules.append(nonbreaking_units)
     rules.append(word_joiner_before_em_dash)
     if not normalize_quote_punctuation:

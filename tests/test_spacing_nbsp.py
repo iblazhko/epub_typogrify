@@ -7,7 +7,11 @@ import pytest
 from epub_typogrify import chars
 from epub_typogrify.locales.profile import LocaleProfile, profile_from_dict
 from epub_typogrify.rules.context import ContextState
-from epub_typogrify.rules.spacing import nonbreaking_abbreviations, nonbreaking_units
+from epub_typogrify.rules.spacing import (
+    nonbreaking_abbreviations,
+    nonbreaking_initials,
+    nonbreaking_units,
+)
 
 NBSP = chars.NO_BREAK_SPACE
 
@@ -55,3 +59,30 @@ def test_no_abbreviations_is_noop(en: LocaleProfile) -> None:
     # The minimal test profile has no abbreviation/unit lists.
     assert nonbreaking_abbreviations("Mr. Smith", en, ContextState()) == "Mr. Smith"
     assert nonbreaking_units("100 km", en, ContextState()) == "100 km"
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("J.M. Coetzee", f"J.M.{NBSP}Coetzee"),
+        ("V.S. Naipaul", f"V.S.{NBSP}Naipaul"),
+        (
+            "J.M. Coetzee, Milan Kundera, and V.S. Naipaul",
+            f"J.M.{NBSP}Coetzee, Milan Kundera, and V.S.{NBSP}Naipaul",
+        ),
+        ("V. S. Naipaul", f"V.{NBSP}S.{NBSP}Naipaul"),  # spaced initials
+        (f"J.M.{NBSP}Coetzee", f"J.M.{NBSP}Coetzee"),  # idempotent
+        ("T.S. Eliot", f"T.S.{NBSP}Eliot"),
+        ("A. The first point.", "A. The first point."),  # single initial: list marker, not bound
+        ("J.M.", "J.M."),  # nothing to bind to
+        ("j.m. coetzee", "j.m. coetzee"),  # lower case: not initials
+    ],
+)
+def test_initials(text: str, expected: str) -> None:
+    assert nonbreaking_initials(text, PROFILE, ContextState()) == expected
+
+
+def test_initials_is_locale_independent(en: LocaleProfile) -> None:
+    # Unlike nonbreaking_abbreviations/nonbreaking_units, this rule needs no
+    # profile-configured word list -- it applies from the bare minimal profile.
+    assert nonbreaking_initials("J.M. Coetzee", en, ContextState()) == f"J.M.{NBSP}Coetzee"

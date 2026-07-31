@@ -225,10 +225,20 @@ Inserted so paired tokens never split across a line:
 | `en-GB` | `Mr Smith` → `Mr␣ₙSmith`; `No. 5` → `No.␣ₙ5`; `St James` → `St␣ₙJames` | `[NHR ch.10]` |
 | `fr` | `M. Dupont` → `M.␣ₙDupont`; `p. 12` → `p.␣ₙ12` | `[IN]` |
 | all | `100 km` → `100␣ₙkm`; `20 °C` → `20␣ₙ°C`; `5 %` → `5␣ₙ%` (configurable units) | `[U]` (SI/general), `[IN]` |
+| all | `J.M. Coetzee` → `J.M.␣ₙCoetzee`; `V. S. Naipaul` → `V.␣ₙS.␣ₙNaipaul` (a person's initials) | `[CMOS ch.6]`, `[NHR ch.10]` |
 
 Abbreviation lists are **per locale** (`Mr./Mrs./Dr.` for American English,
 the stop-less `Mr/Mrs/Dr` for British English — see §2.7 — `M./Mme/Mlle` for
 French, etc.).
+
+**Initials** are handled separately from the abbreviation lists above: any
+run of **two or more** `capital letter + full stop` groups — spaced or not —
+immediately followed by a capitalised word is bound together (each gap
+between initials, and the final gap before the surname). This is a
+locale-independent *pattern* rather than a word list, since the set of
+possible initials is unbounded. A **single** initial (`A. The first
+point…`) is deliberately excluded, since on its own it is indistinguishable
+from a list/outline marker.
 
 ### 2.4 Narrow no-break space before high punctuation (French)
 
