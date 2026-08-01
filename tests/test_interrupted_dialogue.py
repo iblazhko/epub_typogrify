@@ -55,9 +55,7 @@ def _fr(text: str) -> str:
         ("what if -- '", f"what if{WJ}{EM}’"),  # spacing before punctuation dropped
     ],
 )
-def test_en_gb_uses_closed_em_dash_not_its_own_spaced_convention(
-    text: str, expected: str
-) -> None:
+def test_en_gb_uses_closed_em_dash_not_its_own_spaced_convention(text: str, expected: str) -> None:
     # en-GB's ordinary parenthetical dash is a spaced en dash, but interrupted
     # dialogue is a distinct, universal convention: closed em dash regardless.
     assert _gb(text) == expected

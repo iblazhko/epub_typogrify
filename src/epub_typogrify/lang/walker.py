@@ -110,9 +110,7 @@ class TextWalker:
         if not self._is_protected(root):
             self._walk(root, ContextState(), root)
 
-    def _walk(
-        self, elem: etree._Element, ctx: ContextState, block_root: etree._Element
-    ) -> None:
+    def _walk(self, elem: etree._Element, ctx: ContextState, block_root: etree._Element) -> None:
         # Precondition: *elem* is not protected. *block_root* is the nearest
         # enclosing block element (whose boundary ``ctx`` is scoped to), so a rule
         # can tell whether a run is genuinely the last text before the block
