@@ -25,6 +25,7 @@ dev = [
     "ruff>=0.6",
     "mypy>=1.11",
     "hypothesis>=6.0",
+    "types-regex>=2026.7.19.20260720",
 ]
 
 [build-system]
@@ -44,8 +45,9 @@ select = ["E", "F", "I", "UP", "B", "W"]
 [tool.mypy]
 python_version = "3.11"
 files = ["src", "tests"]
-# lxml / regex ship without bundled type stubs at this stage; revisit when the
-# DOM layer lands (Phase 3) by adding lxml-stubs.
+# lxml ships without bundled type stubs at this stage; revisit when the DOM
+# layer lands (Phase 3) by adding lxml-stubs. regex is covered by the
+# types-regex dev dependency instead of falling back to this flag.
 ignore_missing_imports = true
 check_untyped_defs = true
 warn_redundant_casts = true
