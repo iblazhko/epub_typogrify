@@ -21,6 +21,14 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
+          # Without this, every matrix leg computes the same cache key (setup-uv
+          # runs before "Provision Python" below, so it only sees the runner's
+          # ambient system Python, not matrix.python-version) and races to save
+          # an identical cache entry — only the first job to finish wins, the
+          # rest log "Failed to save: Unable to reserve cache ... another job
+          # may be creating this cache." Harmless, but noisy; the suffix gives
+          # each Python version its own cache key.
+          cache-suffix: "py${{ matrix.python-version }}"
 
       - name: Provision Python ${{ matrix.python-version }}
         run: uv python install ${{ matrix.python-version }}
