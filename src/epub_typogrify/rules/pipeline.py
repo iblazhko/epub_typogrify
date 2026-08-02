@@ -23,6 +23,7 @@ from epub_typogrify.rules.fractions import fractions_rule
 from epub_typogrify.rules.punctuation import punctuation_placement_rule
 from epub_typogrify.rules.quotes import make_quote_rule
 from epub_typogrify.rules.spacing import (
+    bind_forward_leading_space,
     collapse_whitespace,
     nonbreaking_abbreviations,
     nonbreaking_initials,
@@ -97,7 +98,12 @@ def build_pipeline(
     rules.append(ellipsis_rule)
     if profile.fractions_enabled:
         rules.append(fractions_rule)
-    # Stage 6: non-breaking spacing.
+    # Stage 6: non-breaking spacing. `bind_forward_leading_space` goes first: it
+    # consumes any pending cross-boundary binding left by the *previous* run's
+    # nonbreaking_abbreviations/nonbreaking_initials before this run's own
+    # abbreviation/initials matching runs (so an abbreviation-then-abbreviation
+    # sequence split across markup, however unlikely, resolves in run order).
+    rules.append(bind_forward_leading_space)
     rules.append(nonbreaking_abbreviations)
     rules.append(nonbreaking_initials)
     rules.append(nonbreaking_units)

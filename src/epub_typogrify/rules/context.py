@@ -33,12 +33,25 @@ class ContextState:
     by the ``TextWalker``, which alone can see across markup boundaries); it
     defaults to ``True`` so a rule used outside the walker (as in most unit tests,
     on an isolated string) sees a run as inherently final.
+
+    ``pending_bind_forward`` is a one-shot flag for a keep-together token (an
+    abbreviation or a run of initials, §2.3) that ends a run with nothing left to
+    bind to *in that run* — e.g. ``<abbr>Mr.</abbr>`` has no trailing word of its
+    own. Set by ``nonbreaking_abbreviations``/``nonbreaking_initials`` when their
+    run ends in such a token; consumed by ``bind_forward_leading_space`` at the
+    very start of the *next* run, which turns a leading ordinary space before a
+    word into a non-breaking space — so the abbreviation still binds to the word
+    that follows it in a neighbouring inline node. Unlike ``run_prev_char`` (one
+    character, enough for the quote engine's open/close decision), this needs a
+    multi-character lookback that a single character can't carry, hence the
+    dedicated flag rather than reusing ``prev_char``.
     """
 
     prev_char: str | None = None
     run_prev_char: str | None = None
     quote_stack: list[str] = field(default_factory=list)
     run_is_block_final: bool = True
+    pending_bind_forward: bool = False
 
 
 # A rule maps text to text given the active locale profile and the running state.

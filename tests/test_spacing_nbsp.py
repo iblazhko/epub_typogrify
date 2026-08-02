@@ -8,6 +8,7 @@ from epub_typogrify import chars
 from epub_typogrify.locales.profile import LocaleProfile, profile_from_dict
 from epub_typogrify.rules.context import ContextState
 from epub_typogrify.rules.spacing import (
+    bind_forward_leading_space,
     nonbreaking_abbreviations,
     nonbreaking_initials,
     nonbreaking_units,
@@ -86,3 +87,102 @@ def test_initials_is_locale_independent(en: LocaleProfile) -> None:
     # Unlike nonbreaking_abbreviations/nonbreaking_units, this rule needs no
     # profile-configured word list -- it applies from the bare minimal profile.
     assert nonbreaking_initials("J.M. Coetzee", en, ContextState()) == f"J.M.{NBSP}Coetzee"
+
+
+# --- Cross-markup-boundary binding (§2.3): an abbreviation or a run of
+# initials with no following word *in its own run* (e.g. the text of an
+# `<abbr>Mr.</abbr>` element) sets `ctx.pending_bind_forward`; the next run's
+# leading space is turned into a non-breaking space by
+# `bind_forward_leading_space`. See test_processor.py for the DOM-level
+# (TextWalker) end-to-end version of these scenarios.
+
+
+def test_abbreviation_with_nothing_to_bind_to_sets_pending_flag() -> None:
+    ctx = ContextState()
+    nonbreaking_abbreviations("Mr.", PROFILE, ctx)
+    assert ctx.pending_bind_forward is True
+
+
+def test_abbreviation_bound_within_its_own_run_does_not_set_pending_flag() -> None:
+    ctx = ContextState()
+    nonbreaking_abbreviations("Mr. Smith", PROFILE, ctx)
+    assert ctx.pending_bind_forward is False
+
+
+def test_ordinary_text_does_not_set_pending_flag() -> None:
+    ctx = ContextState()
+    nonbreaking_abbreviations("nothing to see here", PROFILE, ctx)
+    assert ctx.pending_bind_forward is False
+
+
+def test_initials_with_nothing_to_bind_to_sets_pending_flag_and_binds_internally() -> None:
+    ctx = ContextState()
+    result = nonbreaking_initials("V. S.", PROFILE, ctx)
+    assert result == f"V.{NBSP}S."  # bound to each other even without the surname
+    assert ctx.pending_bind_forward is True
+
+
+def test_single_trailing_initial_does_not_set_pending_flag() -> None:
+    # Same policy as the intra-run case: one initial alone is indistinguishable
+    # from a list/outline marker, even at a markup boundary.
+    ctx = ContextState()
+    result = nonbreaking_initials("H.", PROFILE, ctx)
+    assert result == "H."
+    assert ctx.pending_bind_forward is False
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        (" Adequate", f"{NBSP}Adequate"),
+        (" word", f"{NBSP}word"),
+        ("  Adequate", f"{NBSP}Adequate"),  # multiple leading spaces collapse too
+        ("Adequate", "Adequate"),  # no leading space: nothing to convert
+        ("", ""),
+        (", said Mr. Smith", ", said Mr. Smith"),  # doesn't start with a space+word
+    ],
+)
+def test_bind_forward_leading_space_when_pending(text: str, expected: str) -> None:
+    ctx = ContextState()
+    ctx.pending_bind_forward = True
+    assert bind_forward_leading_space(text, PROFILE, ctx) == expected
+    assert ctx.pending_bind_forward is False  # one-shot: cleared once a real word is seen
+
+
+def test_bind_forward_leading_space_is_noop_when_not_pending() -> None:
+    ctx = ContextState()
+    assert bind_forward_leading_space(" Adequate", PROFILE, ctx) == " Adequate"
+    assert ctx.pending_bind_forward is False
+
+
+def test_bind_forward_leading_space_only_consumes_once() -> None:
+    ctx = ContextState()
+    ctx.pending_bind_forward = True
+    assert bind_forward_leading_space(" Adequate", PROFILE, ctx) == f"{NBSP}Adequate"
+    # A second run, even one that would otherwise match, is untouched: the flag
+    # was for exactly one run.
+    assert bind_forward_leading_space(" Smith", PROFILE, ctx) == " Smith"
+
+
+def test_bind_forward_stays_armed_through_a_pure_whitespace_run() -> None:
+    # The gap in `<strong>Mr.</strong> <em>Adequate</em>`: the tail between the
+    # two inline elements is nothing but the separating space -- no word for
+    # its own run to look ahead to. It becomes a lone nbsp, and the flag stays
+    # armed for the run after it (the <em>'s own text), which is where the
+    # word actually is.
+    ctx = ContextState()
+    ctx.pending_bind_forward = True
+    assert bind_forward_leading_space(" ", PROFILE, ctx) == NBSP
+    assert ctx.pending_bind_forward is True  # still armed
+    assert bind_forward_leading_space("Adequate", PROFILE, ctx) == "Adequate"
+    assert ctx.pending_bind_forward is False  # consumed now
+
+
+def test_bind_forward_stays_armed_through_multiple_whitespace_runs() -> None:
+    ctx = ContextState()
+    ctx.pending_bind_forward = True
+    assert bind_forward_leading_space(" ", PROFILE, ctx) == NBSP
+    assert bind_forward_leading_space(" ", PROFILE, ctx) == NBSP
+    assert ctx.pending_bind_forward is True
+    assert bind_forward_leading_space(" Adequate", PROFILE, ctx) == f"{NBSP}Adequate"
+    assert ctx.pending_bind_forward is False

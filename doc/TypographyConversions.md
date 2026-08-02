@@ -240,6 +240,33 @@ possible initials is unbounded. A **single** initial (`A. The first
 point…`) is deliberately excluded, since on its own it is indistinguishable
 from a list/outline marker.
 
+Both the abbreviation and initials bindings work **across inline-markup
+boundaries**, the same as the dash normalisation in §2.2 — and, unlike §2.2,
+this isn't specific to any one element: it's a property of *any* inline
+markup that can split the abbreviation from its target word, since the
+underlying mechanism (`ContextState`) doesn't know or care what the
+surrounding tag is. All of the following bind the same way:
+
+| Shape | Example |
+|---|---|
+| Abbreviation wrapped, word plain | `<abbr epub:type="z3998:name-title">Mr.</abbr> Adequate` |
+| Word wrapped, abbreviation plain | `Mr. <em>Adequate</em>` |
+| Both wrapped, separately | `<strong>Mr.</strong> <em>Adequate</em>` |
+| Either one in a `<span>`, however classed | `<span class="small-caps">Mr.</span> Adequate` |
+
+— each becomes `…Mr.␣ₙAdequate…`. The third shape is the trickiest: the
+run *between* the two elements' closing/opening tags is nothing but the
+separating space, with no word in it either to look ahead to, so the binding
+has to carry forward through that empty run too before it reaches the word.
+
+The same holds for initials: Standard Ebooks' own
+`<abbr epub:type="z3998:given-name">V. S.</abbr> Naipaul` becomes
+`<abbr epub:type="z3998:given-name">V.␣ₙS.</abbr>␣ₙNaipaul` (the internal
+spacing between the initials is bound too, not just the boundary to the
+surname). The single-initial exclusion above still applies at a markup
+boundary — `<abbr epub:type="z3998:given-name">H.</abbr> Taft` is left
+unbound, matching the intra-run policy.
+
 ### 2.4 Narrow no-break space before high punctuation (French)
 
 French inserts a narrow no-break space inside guillemets and before
