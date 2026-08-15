@@ -12,12 +12,15 @@ from epub_typogrify.rules.pipeline import build_pipeline
 _REG = LocaleRegistry.default()
 _EN = _REG.resolve("en")
 _GB = _REG.resolve("en-GB")
-assert _EN is not None and _GB is not None
+_RU = _REG.resolve("ru")
+assert _EN is not None and _GB is not None and _RU is not None
 
 LDQ = chars.LEFT_DOUBLE_QUOTE
 RDQ = chars.RIGHT_DOUBLE_QUOTE
 LSQ = chars.LEFT_SINGLE_QUOTE
 RSQ = chars.RIGHT_SINGLE_QUOTE
+LG = chars.LEFT_GUILLEMET
+RG = chars.RIGHT_GUILLEMET
 
 
 def _run(profile: LocaleProfile, text: str, *, quotes: bool = False) -> str:
@@ -115,5 +118,39 @@ _CORPUS = [
 @pytest.mark.parametrize("text", _CORPUS)
 def test_relocation_idempotent(profile: LocaleProfile, text: str) -> None:
     pipeline = build_pipeline(profile, normalize_quotes=True, normalize_quote_punctuation=True)
+    once = pipeline.run(text)
+    assert pipeline.run(once) == once
+
+
+def _ru(text: str) -> str:
+    return build_pipeline(_RU, normalize_quote_punctuation=True).run(text)
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        # Comma inside the raw quote moves outside (matrix sentence's, not the
+        # quote's), same direction as logical.
+        ('"Идите," сказал он', f"{LG}Идите{RG}, сказал он"),
+        # Period: ALWAYS outside, even for a complete-sentence quotation — no
+        # exception, unlike en-GB's `logical` mode.
+        ('"Целая фраза."', f"{LG}Целая фраза{RG}."),
+        (f"{LG}Уже снаружи{RG}.", f"{LG}Уже снаружи{RG}."),  # already outside: no-op
+        # A quote-ending ?/!/… stays inside; nothing is appended outside.
+        ('"Стоять!"', f"{LG}Стоять!{RG}"),
+        ('"Кто там?"', f"{LG}Кто там?{RG}"),
+    ],
+)
+def test_ru_punctuation_always_outside(text: str, expected: str) -> None:
+    assert _ru(text) == expected
+
+
+def test_ru_ellipsis_is_not_split() -> None:
+    assert _ru('"подожди..."') == f"{LG}подожди{chars.ELLIPSIS}{RG}"
+
+
+@pytest.mark.parametrize("text", _CORPUS + ['"Целая фраза."', '"Стоять!"'])
+def test_ru_relocation_idempotent(text: str) -> None:
+    pipeline = build_pipeline(_RU, normalize_quote_punctuation=True)
     once = pipeline.run(text)
     assert pipeline.run(once) == once

@@ -24,13 +24,34 @@ _DASHES = chars.EM_DASH + chars.TWO_EM_DASH + chars.THREE_EM_DASH
 # An em/two-em/three-em dash directly preceded by a non-space, non-joiner,
 # non-dash character: insert a word joiner so the line cannot break before it.
 _BEFORE_DASH = re.compile(r"(?<![\s" + chars.WORD_JOINER + _DASHES + r"])([" + _DASHES + r"])")
+_NO_PRECEDING_WORD = frozenset(" \t\n\r\f\v" + chars.WORD_JOINER + _DASHES)
 
 _MULTI_SPACE = re.compile(r" {2,}")
 _MULTI_NBSP = re.compile(chars.NO_BREAK_SPACE + r"{2,}")
 
 
 def word_joiner_before_em_dash(text: str, profile: LocaleProfile, ctx: ContextState) -> str:
-    result: str = _BEFORE_DASH.sub(lambda m: chars.WORD_JOINER + m.group(1), text)
+    """Insert a word joiner before an em/two-/three-em dash so the line cannot
+    break right before it (§1.6) — but only when there is a word to protect.
+
+    A dash that opens its **block** has nothing before it on the line at all
+    (a Russian block-start dialogue dash, e.g. ``— Реплика``, is the most
+    common case) — a word joiner there is inert, so it is skipped, checked via
+    ``ctx.run_prev_char`` for a dash at the very start of this run (the same
+    "no preceding word" signal ``normalize_parenthetical_dashes`` and
+    ``bind_interrupted_dialogue_dash`` already use for the mirror case). A dash
+    at a run's start whose *previous* run ends in a real word — an inline-markup
+    boundary, not a block start — still gets the joiner.
+    """
+
+    def replace(match: re.Match[str]) -> str:
+        if match.start() == 0:
+            prev = ctx.run_prev_char
+            if prev is None or prev in _NO_PRECEDING_WORD or prev.isspace():
+                return match.group(1)
+        return chars.WORD_JOINER + match.group(1)
+
+    result: str = _BEFORE_DASH.sub(replace, text)
     return result
 
 

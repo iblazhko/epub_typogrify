@@ -8,6 +8,10 @@ from epub_typogrify import chars
 from epub_typogrify.locales.hooks import hooks_for
 from epub_typogrify.locales.hooks.en import english_contractions, english_latinisms
 from epub_typogrify.locales.hooks.fr import french_spacing
+from epub_typogrify.locales.hooks.ru import (
+    russian_compound_abbreviations,
+    russian_short_word_nbsp,
+)
 from epub_typogrify.locales.profile import LocaleProfile
 from epub_typogrify.locales.registry import LocaleRegistry
 from epub_typogrify.rules.context import ContextState
@@ -15,6 +19,7 @@ from epub_typogrify.rules.context import ContextState
 LSQ = chars.LEFT_SINGLE_QUOTE
 RSQ = chars.RIGHT_SINGLE_QUOTE
 NN = chars.NARROW_NO_BREAK_SPACE
+NBSP = chars.NO_BREAK_SPACE
 
 
 def test_english_hooks_apply_to_en_and_en_gb() -> None:
@@ -55,3 +60,42 @@ def test_french_spacing(registry: LocaleRegistry) -> None:
     assert french_spacing(guillemets, fr, ContextState()) == expected
     # idempotent
     assert french_spacing(expected, fr, ContextState()) == expected
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("т. д.", f"т.{NBSP}д."),
+        ("т. п.", f"т.{NBSP}п."),
+        ("т. е.", f"т.{NBSP}е."),
+        ("и т. д.", f"и{NBSP}т.{NBSP}д."),
+        ("и т. п.", f"и{NBSP}т.{NBSP}п."),
+        ("н. э.", f"н.{NBSP}э."),
+        ("до н. э.", f"до{NBSP}н.{NBSP}э."),
+        ("Т. д.", f"Т.{NBSP}д."),  # sentence-initial, case-insensitive
+    ],
+)
+def test_russian_compound_abbreviations(registry: LocaleRegistry, text: str, expected: str) -> None:
+    ru = registry.resolve("ru")
+    assert ru is not None
+    assert russian_compound_abbreviations(text, ru, ContextState()) == expected
+    # idempotent
+    assert russian_compound_abbreviations(expected, ru, ContextState()) == expected
+
+
+def test_russian_short_word_nbsp_off_by_default(registry: LocaleRegistry) -> None:
+    ru = registry.resolve("ru")
+    assert ru is not None
+    assert not ru.spaces.nbsp_after_short_words
+    assert russian_short_word_nbsp("а потом ушел", ru, ContextState()) == "а потом ушел"
+
+
+def test_russian_short_word_nbsp_when_enabled(registry: LocaleRegistry) -> None:
+    from dataclasses import replace
+
+    ru = registry.resolve("ru")
+    assert ru is not None
+    enabled = replace(ru, spaces=replace(ru.spaces, nbsp_after_short_words=True))
+    assert russian_short_word_nbsp("а потом ушел", enabled, ContextState()) == f"а{NBSP}потом ушел"
+    # "не" is itself a short word, so it binds forward too.
+    assert russian_short_word_nbsp("Я не знаю", enabled, ContextState()) == f"Я{NBSP}не{NBSP}знаю"

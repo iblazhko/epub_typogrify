@@ -50,3 +50,32 @@ def test_fr_guillemets_and_high_punctuation(registry: LocaleRegistry) -> None:
 def test_de_nesting_from_character_based_engine(registry: LocaleRegistry) -> None:
     assert _run(registry, "de", '"Hallo"') == f"{chars.LEFT_LOW_DOUBLE_QUOTE}Hallo{LDQ}"
     assert _run(registry, "de", "1--2") == f"1{EN}2"
+
+
+def test_ru_guillemets_and_nesting(registry: LocaleRegistry) -> None:
+    # A straight double quote maps to guillemets; a straight single quote to the
+    # nested лапки pair (same glyphs German uses as its primary).
+    assert _run(registry, "ru", '"Привет"') == f"{LG}Привет{RG}"
+    assert _run(registry, "ru", "'Привет'") == f"{chars.LEFT_LOW_DOUBLE_QUOTE}Привет{LDQ}"
+
+
+def test_ru_normalize_dashes_is_spaced_em(registry: LocaleRegistry) -> None:
+    # `--` on its own is plain em dash (plus the agnostic word-joiner, §1.6), no
+    # extra spacing added.
+    assert _run(registry, "ru", "кот--чёрный") == f"кот{WJ}{EM}чёрный"
+    # The opt-in rewrite of an *existing* parenthetical dash uses Russian's
+    # spaced convention: nbsp before the dash, a breakable space after.
+    profile = registry.resolve("ru")
+    assert profile is not None
+    normalized = build_pipeline(profile, normalize_dashes=True).run(f"кот{EM}чёрный")
+    assert normalized == f"кот{NBSP}{EM} чёрный"
+
+
+def test_ru_interrupted_dialogue_dash(registry: LocaleRegistry) -> None:
+    # A run defaults to block-final (ContextState.run_is_block_final=True), so a
+    # trailing em dash with a preceding word is bound as interrupted speech.
+    assert _run(registry, "ru", "что если—") == f"что если{WJ}{EM}"
+
+
+def test_ru_compound_abbreviation_hook(registry: LocaleRegistry) -> None:
+    assert _run(registry, "ru", "и т. д.") == f"и{NBSP}т.{NBSP}д."

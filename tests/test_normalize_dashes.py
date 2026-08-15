@@ -56,7 +56,9 @@ def test_en_us_closed_em_dash(text: str, expected: str) -> None:
 def test_ranges_and_dialogue_dashes_are_left_alone() -> None:
     assert _gb("1914-1918") == f"1914{EN}1918"  # hyphen range -> en (normal rule)
     assert _gb(f"1914{EM}1918") == f"1914{WJ}{EM}1918"  # em between digits: not parenthetical
-    assert _gb(f"{EM}go on") == f"{WJ}{EM}go on"  # leading dash (dialogue/list): no preceding word
+    # Leading dash (dialogue/list): no preceding word, so no word joiner either
+    # (§1.6) — there is nothing on the line before it to protect from a break.
+    assert _gb(f"{EM}go on") == f"{EM}go on"
 
 
 def test_trailing_interrupted_dash_is_bound() -> None:

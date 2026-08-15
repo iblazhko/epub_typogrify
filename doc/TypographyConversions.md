@@ -62,7 +62,11 @@ These apply to text in any language (subject to the protected-element rules).
 
 ### 1.6 Word joiner before em dash
 Prevents a line break immediately before an em dash: `word—` → `word⁤—`.
-Source: `[SEMOS §8]` (em dashes are preceded by a word joiner, U+2060).
+Source: `[SEMOS §8]` (em dashes are preceded by a word joiner, U+2060). Skipped
+for a dash that opens its **block** (nothing precedes it on the line to
+protect — most commonly a Russian block-start dialogue dash, `— Реплика`);
+still applied across an inline-markup boundary when the *previous* run
+genuinely ends in a word.
 
 ### 1.7 Cleanup
 - Collapse doubled spaces / doubled nbsp. Source: `[CMOS ch.2]` (single space
@@ -406,6 +410,63 @@ after a true truncation (`vol.`, `p.`, `No.`). Source: `[NHR ch.10]` vs.
 | `Mr. Smith` | `Mr.␣ₙSmith` | `Mr␣ₙSmith` |
 | `vol. II` | `vol.␣ₙII` | `vol.␣ₙII` |
 
+### 2.8 Russian
+
+Primary source `[MC]`; `[KOV]` noted where it diverges or is stricter.
+
+**Quotation marks.** Character-based, same pattern as French/German: `"` → the
+primary (ёлочки) pair, `'` → the nested (лапки) pair.
+
+| `"` → (double) | `'` → (single) | Source |
+|---|---|---|
+| `« … »` | `„ … “` (same glyphs as `de`'s primary) | `[MC]` |
+
+**`--` target and parenthetical dash (§2.2).** Em dash, but — unlike American
+English — the *ordinary* parenthetical dash is **spaced**, not closed:
+
+| `--` becomes | Convention | Source |
+|---|---|---|
+| `—` (em) | spaced: `кот␣ₙ— чёрный, как ночь — бежал` | `[MC]` |
+
+**Interrupted dialogue** (§2.2, always on): closed em dash, same glyph as the
+ordinary dash — unlike English/German, no glyph switch, just no spacing.
+Source: `[MC]`.
+
+**Punctuation vs. closing quote.** A third `punctuation` mode, `russian`: a
+trailing comma or period is **always** relocated outside the closing quote —
+Russian has no British-style "complete sentence" exception that keeps a
+period inside. A quote-ending `?`/`!`/`…` is never touched (it stays inside,
+and no separate period follows it outside).
+
+| Input | Output | Source |
+|---|---|---|
+| `«Идите,» сказал он` | `«Идите», сказал он` | `[MC]` |
+| `«Целая фраза.»` | `«Целая фраза».` | `[MC]` |
+| `«Стоять!»` | `«Стоять!»` (unchanged — `!` stays inside) | `[MC]` |
+
+The mild always-on relocation (§2.7, no flag needed) is restricted to
+`typesetters` locales, same as `logical`; enable `--normalize-quote-punctuation`
+for the `russian` relocation above.
+
+**Non-breaking spaces (keep-together, §2.3).**
+
+| Pattern → result | Source |
+|---|---|
+| `1914 г.` → `1914␣ₙг.`; `1914–1918 гг.` → `1914–1918␣ₙгг.` (year/century abbreviations, also usable before a place name, e.g. `г.␣ₙМосква`) | `[MC]` |
+| `100 км` → `100␣ₙкм`; `20 °C` → `20␣ₙ°C` (units, as for other locales) | `[MC]` |
+| `Н.А. Фандорин` → `Н.А.␣ₙФандорин` (initials — the locale-independent pattern of §2.3 already covers Cyrillic) | `[MC]` |
+| `т. д.`, `т. п.`, `т. е.`, `т. к.`, `т. н.`, `и т. д.`, `н. э.`, `до н. э.` → internal spacing bound (`т.␣ₙд.`, `и␣ₙт.␣ₙд.`, …) | `[MC]` — code hook, lowercase idioms the capital-letter initials pattern can't match |
+
+**Short-word non-breaking space (opt-in).** A single-letter or short
+preposition/conjunction/particle (`а`, `и`, `в`, `к`, `о`, `с`, `у`, `я`, `не`,
+`но`, …) is bound to the following word so it never dangles at a line end.
+Off by default (`spaces.nbsp_after_short_words`); `[KOV]` treats this rule more
+strictly/universally than `[MC]`.
+
+| Input | Output (when enabled) | Source |
+|---|---|---|
+| `а потом ушёл` | `а␣ₙпотом ушёл` | `[MC]`, `[KOV]` |
+
 ---
 
 ## 3. What is **not** converted
@@ -445,3 +506,8 @@ cited edition; where an online edition exists, the link points to it.
 - **`[SEMOS]`** — *The Standard Ebooks Manual of Style*, §8 Typography (the
   house style this tool's English/agnostic rules most closely follow).
   <https://standardebooks.org/manual/latest/8-typography>
+- **`[MC]`** — Мильчин, А. Э.; Чельцова, Л. К., *Справочник издателя и автора*
+  (Russian). Sections on punctuation, quotation marks, abbreviations.
+- **`[KOV]`** — Lebedev, A., *Ководство* (Russian; modern/prescriptive
+  typography guide, stricter on non-breaking spaces than `[MC]`).
+  <https://www.artlebedev.ru/kovodstvo/>

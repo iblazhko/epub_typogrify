@@ -43,3 +43,4 @@ def hooks_for(tag: str) -> list[Rule]:
 # decorator are defined, so the modules can import them).
 from epub_typogrify.locales.hooks import en as _en  # noqa: E402,F401
 from epub_typogrify.locales.hooks import fr as _fr  # noqa: E402,F401
+from epub_typogrify.locales.hooks import ru as _ru  # noqa: E402,F401

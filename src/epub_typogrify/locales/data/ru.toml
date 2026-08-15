@@ -1,0 +1,39 @@
+# Russian. Primary source: Мильчин & Чельцова, «Справочник издателя и автора»
+# [MC]; Lebedev's Ководство [KOV] noted in code/doc comments where it diverges
+# or is stricter (mainly the opt-in short-word nbsp rule below).
+inherits = "default"
+
+[quotes]
+double = { open = "«", close = "»" }   # ёлочки — guillemets for `"`
+single = { open = "„", close = "“" }   # лапки — nested marks for `'` (same glyphs as `de`'s primary)
+punctuation = "russian"                # period always outside; comma outside; a
+                                        # quote-ending ?/!/… stays inside [MC]
+
+[dashes]
+# `--`/`---` -> em dash (inherited from `default`); Russian's ordinary
+# parenthetical dash is spaced, unlike the American closed style.
+parenthetical_spacing = "spaced"       # кот — чёрный, как ночь — бежал
+interrupted_dialogue = "—"             # closed, same glyph as the ordinary dash [MC]
+
+[spaces]
+# Opt-in: bind a single-letter/short preposition or conjunction (а, и, в, к, о,
+# с, у, я, …) to the following word so it never dangles at a line end — a
+# well-known Russian convention [MC][KOV], stricter in [KOV]. Off by default;
+# set to `true` to enable for this project.
+nbsp_after_short_words = false
+
+[abbreviations]
+nonbreaking = [
+  "г.", "гг.", "в.", "вв.",              # год(ы)/век(а), also precede a place name
+  "им.", "проф.", "акад.", "тов.", "гр.",
+  "стр.", "гл.", "рис.", "табл.", "см.", "напр.", "др.",
+  "№",
+]
+
+[keep_together]
+# Numeral-before form (a number followed by the unit/abbreviation), e.g.
+# `1914 г.` or `100 км`.
+units = [
+  "км", "кг", "мм", "см", "м", "га", "л", "ч", "мин", "%", "°C", "°F",
+  "г.", "гг.", "в.", "вв.",
+]

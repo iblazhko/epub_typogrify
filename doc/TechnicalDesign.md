@@ -409,9 +409,10 @@ src/epub_typogrify/
       en.toml  en-GB.toml
       fr.toml
       de.toml
+      ru.toml
       la.toml
     hooks/
-      en.py  fr.py  de.py  el.py
+      en.py  fr.py  de.py  ru.py  el.py
 doc/
   TechnicalDesign.md          (this file)
   TypographyConversions.md    (rule catalogue)

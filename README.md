@@ -60,8 +60,8 @@ Conversions are language-specific and selected **per content node**. The languag
 of a run of text is resolved as: nearest ancestor `xml:lang`/`lang` → the
 document's `<html lang>` → the publication `dc:language` (project runs only) →
 `--default-lang`. If none of these apply, the run is left unchanged. Supported
-languages are `en` (American), `en-GB` (British), `fr`, `de`, and `la`; text in
-any other language is left untouched.
+languages are `en` (American), `en-GB` (British), `fr`, `de`, `ru`, and `la`;
+text in any other language is left untouched.
 
 ### What is left untouched
 
@@ -91,6 +91,10 @@ epub_typogrify --normalize-dashes path/to/book/
 # Conform a British book to full house style: single-outer quote nesting with
 # punctuation outside the closing quotes.
 epub_typogrify --normalize-quotes --normalize-quote-punctuation path/to/book/
+
+# A Russian book: guillemets/лапки nesting, spaced parenthetical em dashes,
+# and the Russian comma/period-always-outside quote-punctuation rule.
+epub_typogrify --normalize-quote-punctuation path/to/russian-book/
 ```
 
 The full catalogue of conversions is in

@@ -21,9 +21,11 @@ Optionally (opt-in, ``--normalize-quote-punctuation``) the engine also relocates
 quote-adjacent punctuation across the closing mark per ``quotes.punctuation``:
 ``typesetters`` (American) pulls a trailing period/comma *inside*; ``logical``
 (British) pushes a trailing **comma** *outside* but leaves sentence-terminal
-``.``/``!``/``?`` in place (it stays inside a complete-sentence quotation). Done
-here — not as a regex — because only the engine knows a given ``’`` is a closing
-quote rather than an apostrophe.
+``.``/``!``/``?`` in place (it stays inside a complete-sentence quotation);
+``russian`` pushes both a trailing **comma and period** outside unconditionally
+(no complete-sentence exception), while a quote-ending ``?``/``!``/ellipsis
+still stays inside. Done here — not as a regex — because only the engine knows
+a given ``’`` is a closing quote rather than an apostrophe.
 """
 
 from __future__ import annotations
@@ -145,18 +147,30 @@ def _pair(quotes: Quotes, kind: str, depth: int, normalize: bool) -> QuotePair:
 _PULL_INSIDE = frozenset(".,")
 
 
-def _pop_inner_punct(out: list[str]) -> str:
-    """Pop a trailing **comma** from emitted content for the ``logical`` push-outside
-    direction.
+def _pop_inner_punct(out: list[str], *, include_period: bool) -> str:
+    """Pop a trailing comma (and, for ``russian``, also a period) from emitted
+    content for a push-outside direction.
 
-    Sentence-terminal punctuation (``.``/``!``/``?``) is deliberately *not* moved:
-    British logical style keeps it **inside** when the quotation is, or ends with, a
-    complete sentence (the common dialogue case — ``‘…around.’``), and only outside
-    for an embedded fragment (``‘a disgrace’.``). Reliably telling those apart is an
-    NLP-grade problem, so we move only the comma (which is the matrix sentence's, not
-    the quote's) and leave terminal punctuation where the author placed it.
+    ``logical`` (British, ``include_period=False``): sentence-terminal
+    punctuation (``.``/``!``/``?``) is deliberately *not* moved — it stays
+    **inside** when the quotation is, or ends with, a complete sentence (the
+    common dialogue case — ``'...around.'``), and only outside for an embedded
+    fragment (``'a disgrace'.``). Reliably telling those apart is an NLP-grade
+    problem, so only the comma (the matrix sentence's, not the quote's) is
+    relocated.
+
+    ``russian`` (``include_period=True``): a period is *always* the matrix
+    sentence's — Russian style has no "complete sentence" exception — so it is
+    relocated unconditionally, unlike ``logical``. A quote-ending ``?``/``!``/
+    ellipsis is still never touched (not in ``_PULL_INSIDE``), and a run of
+    dots (an ellipsis not yet collapsed to the single glyph) is left alone via
+    the ``out[-2]`` guard, same as the comma case.
     """
-    if out and out[-1] == "," and (len(out) < 2 or out[-2] not in _PULL_INSIDE):
+    if not out:
+        return ""
+    if out[-1] == "," and (len(out) < 2 or out[-2] not in _PULL_INSIDE):
+        return out.pop()
+    if include_period and out[-1] == "." and (len(out) < 2 or out[-2] not in _PULL_INSIDE):
         return out.pop()
     return ""
 
@@ -216,8 +230,8 @@ def _convert(
         if stack and stack[-1] == kind:
             stack.pop()
         glyph = _pair(quotes, kind, len(stack), normalize).close
-        if direction == "logical":
-            moved = _pop_inner_punct(out)
+        if direction == "logical" or direction == "russian":
+            moved = _pop_inner_punct(out, include_period=direction == "russian")
             out.append(glyph)
             if moved:
                 out.append(moved)

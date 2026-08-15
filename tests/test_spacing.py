@@ -17,10 +17,26 @@ from epub_typogrify.rules.spacing import collapse_whitespace, word_joiner_before
         (f"word{WORD_JOINER}{EM_DASH}next", f"word{WORD_JOINER}{EM_DASH}next"),  # idempotent
         (f"a{THREE_EM_DASH}b", f"a{WORD_JOINER}{THREE_EM_DASH}b"),
         (f" {EM_DASH}next", f" {EM_DASH}next"),  # preceded by space -> no joiner
+        (f"{EM_DASH}next", f"{EM_DASH}next"),  # block start, no ctx: no preceding word
     ],
 )
 def test_word_joiner(en: LocaleProfile, text: str, expected: str) -> None:
     assert word_joiner_before_em_dash(text, en, ContextState()) == expected
+
+
+def test_word_joiner_block_start_dialogue_dash(en: LocaleProfile) -> None:
+    # A dash opening its block (a Russian block-start dialogue dash is the
+    # common case) has nothing before it on the line -- no word joiner to add.
+    text = f"{EM_DASH}Реплика"
+    assert word_joiner_before_em_dash(text, en, ContextState()) == text
+
+
+def test_word_joiner_across_markup_boundary(en: LocaleProfile) -> None:
+    # A dash at the *start* of this run whose previous run ends in a real word
+    # (an inline-markup boundary, not a block start) still gets the joiner --
+    # ctx.run_prev_char carries that word across.
+    ctx = ContextState(run_prev_char="d")
+    assert word_joiner_before_em_dash(f"{EM_DASH}next", en, ctx) == f"{WORD_JOINER}{EM_DASH}next"
 
 
 @pytest.mark.parametrize(

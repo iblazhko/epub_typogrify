@@ -35,8 +35,11 @@ class Quotes:
     ``outer`` (``"double"`` or ``"single"``) names which pair is the *top level*
     quotation; it is only consumed by the opt-in nesting normalisation, where
     ``primary``/``secondary`` are assigned by nesting depth. ``punctuation`` is
-    ``"typesetters"`` (commas/periods inside the closing quote, US style) or
-    ``"logical"`` (British style).
+    ``"typesetters"`` (commas/periods inside the closing quote, US style),
+    ``"logical"`` (British style: comma outside, a complete-sentence terminal
+    ``.``/``!``/``?`` stays inside), or ``"russian"`` (comma *and* period always
+    outside; a quote-ending ``?``/``!``/``…`` stays inside — no "complete
+    sentence" ambiguity, unlike ``logical``).
     """
 
     double: QuotePair
@@ -91,13 +94,15 @@ class Spaces:
     """Which non-breaking space a locale uses, and French high-punctuation spacing.
 
     ``before_high_punctuation``/``guillemet_inner`` drive the French narrow-space
-    hook (§2.4); they are off by default.
+    hook (§2.4); they are off by default. ``nbsp_after_short_words`` drives the
+    (opt-in) Russian single-letter preposition/conjunction hook.
     """
 
     nbsp: str = chars.NO_BREAK_SPACE
     narrow_nbsp: str = chars.NARROW_NO_BREAK_SPACE
     before_high_punctuation: bool = False
     guillemet_inner: bool = False
+    nbsp_after_short_words: bool = False
 
 
 @dataclass(frozen=True)
@@ -169,6 +174,7 @@ def _spaces_from_dict(data: Mapping[str, Any]) -> Spaces:
         narrow_nbsp=data.get("narrow_nbsp", chars.NARROW_NO_BREAK_SPACE),
         before_high_punctuation=bool(data.get("before_high_punctuation", False)),
         guillemet_inner=bool(data.get("guillemet_inner", False)),
+        nbsp_after_short_words=bool(data.get("nbsp_after_short_words", False)),
     )
 
 
